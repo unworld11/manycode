@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ccshare - multiplayer claude code</title>
+    <meta name="description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Your friend joins from their terminal, sees your exact screen, and both of you can type." />
+    <meta property="og:title" content="ccshare - multiplayer claude code" />
+    <meta property="og:description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Open source, no accounts, no telemetry." />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0b0d10" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='bold' fill='%2386c48e' text-anchor='middle'%3E%24%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root{color-scheme:dark}
+      body{margin:0;background:#0b0d10;color:#e8e4dc;font-family:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+      ::selection{background:#d97757;color:#0b0d10}
+      a{color:inherit}
+      .col-narrow{width:100%;max-width:720px;margin:0 auto;padding:0 24px;box-sizing:border-box}
+      .col-wide{width:100%;max-width:1080px;margin:0 auto;padding:0 24px;box-sizing:border-box}
+      .dim{color:#8a94a0}
+      .orange{color:#d97757}
+      .green{color:#86c48e}
+      .nav{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:28px 0}
+      .wordmark{font-weight:700;font-size:16px;text-decoration:none}
+      .navlinks{display:flex;gap:24px;font-size:13px}
+      .navlink{color:#8a94a0;text-decoration:none}
+      .navlink:hover{color:#e8e4dc}
+      .hero{padding:72px 0 56px 0}
+      .h1{font-size:clamp(28px,5vw,44px);font-weight:700;line-height:1.15;margin:0 0 20px 0;letter-spacing:-0.02em}
+      .h1line{display:block}
+      .lede{color:#8a94a0;font-size:15px;max-width:56ch;margin:0 0 40px 0}
+      .lede b{color:#e8e4dc;font-weight:500}
+      .install{display:flex;align-items:center;gap:12px;background:#11151a;border:1px solid #232a33;border-radius:6px;padding:14px 18px;font-size:13.5px}
+      .install-prompt{color:#86c48e;user-select:none;flex:none}
+      .install-scroll{overflow-x:auto;white-space:nowrap;flex:1;min-width:0;scrollbar-width:none}
+      .copybtn{flex:none;background:none;border:1px solid #232a33;border-radius:4px;color:#8a94a0;font-family:inherit;font-size:12px;padding:4px 10px;cursor:pointer}
+      .copybtn:hover{border-color:#d97757;color:#d97757}
+      .hero-sub{margin-top:14px;font-size:13px;color:#5c6570}
+      .hero-sub a{color:#8a94a0}
+      .sechead{font-size:12px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#5c6570;margin:0 0 28px 0}
+      .sechead::before{content:'## ';color:#3a424c}
+      .section{padding:56px 0}
+      .rule{border:none;border-top:1px solid #1a2027;margin:0}
+      .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+      @media (max-width:860px){.demo-grid{grid-template-columns:1fr}}
+      .term{background:#0e1116;border:1px solid #232a33;border-radius:8px;overflow:hidden;font-size:13px;line-height:1.65}
+      .term-bar{display:flex;align-items:center;gap:8px;background:#151a21;border-bottom:1px solid #232a33;padding:9px 14px;font-size:12px;color:#5c6570}
+      .term-dots{display:flex;gap:6px}
+      .term-dot{width:10px;height:10px;border-radius:50%;background:#2a323c}
+      .term-title{margin-left:6px}
+      .term-body{padding:16px 18px 20px 18px;min-height:290px;box-sizing:border-box}
+      .tline{white-space:pre-wrap;word-break:break-word}
+      .banner-line{color:#5c6570}
+      .bigcode{font-size:26px;font-weight:700;letter-spacing:0.08em;color:#e8c170;padding:6px 0}
+      .cursor{display:inline-block;width:8px;height:15px;background:#86c48e;vertical-align:text-bottom;animation:blink 1.1s steps(1) infinite}
+      @keyframes blink{50%{opacity:0}}
+      @media (prefers-reduced-motion:no-preference){
+        .reveal{opacity:0;animation:appear 0.01s linear forwards}
+        @keyframes appear{to{opacity:1}}
+      }
+      .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px}
+      @media (max-width:860px){.steps{grid-template-columns:1fr}}
+      .step-num{color:#d97757;font-weight:700;font-size:13px;margin-bottom:10px}
+      .step-name{font-weight:600;margin-bottom:8px}
+      .step-body{color:#8a94a0;font-size:13.5px}
+      .step-body code{color:#e8e4dc;background:#151a21;padding:1px 6px;border-radius:3px;font-size:12.5px}
+      .featlist{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+      .feat{display:grid;grid-template-columns:220px 1fr;gap:24px;padding:16px 0;border-bottom:1px solid #1a2027;margin:0}
+      .feat:first-child{border-top:1px solid #1a2027}
+      @media (max-width:640px){.feat{grid-template-columns:1fr;gap:4px}}
+      .feat-name{font-weight:600;font-size:14px}
+      .feat-desc{color:#8a94a0;font-size:13.5px}
+      .feat-desc code{color:#e8e4dc;background:#151a21;padding:1px 6px;border-radius:3px;font-size:12.5px}
+      .warn{background:#141013;border:1px solid #3a2a24;border-radius:6px;padding:24px 28px;font-size:14px}
+      .warn-head{color:#d97757;font-weight:700;margin-bottom:10px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase}
+      .warn p{margin:0;color:#c9c2b8}
+      .footer{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;padding:40px 0 56px 0;font-size:13px;color:#5c6570}
+      .footer a{color:#8a94a0;text-decoration:none}
+      .footer a:hover{color:#e8e4dc}
+    </style>
+  </head>
+  <body>
+    <div class="col-wide">
+      <nav class="nav">
+        <a class="wordmark" href="#"><span class="green">$</span> ccshare</a>
+        <div class="navlinks">
+          <a class="navlink" href="#how">how it works</a>
+          <a class="navlink" href="#security">security</a>
+          <a class="navlink" href="https://github.com/unworld11/ccshare">github</a>
+        </div>
+      </nav>
+    </div>
+
+    <header class="hero col-narrow">
+      <h1 class="h1"><span class="h1line">multiplayer</span><span class="h1line">claude code<span class="orange">.</span></span></h1>
+      <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal, sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a relay you own.</p>
+      <div class="install">
+        <span class="install-prompt">$</span>
+        <span class="install-scroll" id="install-cmd">git clone https://github.com/unworld11/ccshare &amp;&amp; cd ccshare &amp;&amp; npm i &amp;&amp; npm link</span>
+        <button class="copybtn" id="copybtn" type="button">copy</button>
+      </div>
+      <p class="hero-sub">MIT licensed &middot; no accounts &middot; no telemetry &middot; <a href="https://github.com/unworld11/ccshare">source on github</a></p>
+    </header>
+
+    <section class="section col-wide">
+      <div class="demo-grid">
+        <div class="term">
+          <div class="term-bar"><div class="term-dots"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span></div><span class="term-title">you</span></div>
+          <div class="term-body">
+            <div class="tline reveal" style="animation-delay:0.3s"><span class="green">$</span> cd my-project</div>
+            <div class="tline reveal" style="animation-delay:0.9s"><span class="green">$</span> ccshare host</div>
+            <div class="tline reveal" style="animation-delay:1.7s">&nbsp;</div>
+            <div class="tline reveal banner-line" style="animation-delay:1.7s">  &#9472;&#9472;&#9472; ccshare &#9472;&#9472;&#9472; multiplayer claude code &#9472;&#9472;&#9472;</div>
+            <div class="tline reveal" style="animation-delay:1.9s">&nbsp;</div>
+            <div class="tline reveal bigcode" style="animation-delay:2.1s">  7KQ 2FM</div>
+            <div class="tline reveal" style="animation-delay:2.3s">&nbsp;</div>
+            <div class="tline reveal dim" style="animation-delay:2.5s">  same wifi:   ccshare join 7KQ2FM</div>
+            <div class="tline reveal dim" style="animation-delay:2.7s">  direct:      ccshare join 7KQ2FM --host 192.168.1.4:42518</div>
+            <div class="tline reveal" style="animation-delay:2.9s">&nbsp;</div>
+            <div class="tline reveal green" style="animation-delay:6.4s">  * friend connected</div>
+          </div>
+        </div>
+        <div class="term">
+          <div class="term-bar"><div class="term-dots"><span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span></div><span class="term-title">your friend, same wifi</span></div>
+          <div class="term-body">
+            <div class="tline reveal" style="animation-delay:4.2s"><span class="green">$</span> ccshare join 7KQ2FM</div>
+            <div class="tline reveal dim" style="animation-delay:5.2s">ccshare: looking for the session on your network&hellip;</div>
+            <div class="tline reveal dim" style="animation-delay:6.4s">ccshare: connected (lan). Ctrl-] to leave.</div>
+            <div class="tline reveal" style="animation-delay:7.0s">&nbsp;</div>
+            <div class="tline reveal" style="animation-delay:7.2s"><span class="orange">&#9581;&#9472;</span> your claude session renders here, live</div>
+            <div class="tline reveal" style="animation-delay:7.4s"><span class="orange">&#9474;</span>  same screen. same prompt. both keyboards work.</div>
+            <div class="tline reveal" style="animation-delay:7.6s"><span class="orange">&#9584;&#9472;</span> <span class="cursor"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="col-narrow"><hr class="rule" /></div>
+
+    <section class="section col-narrow" id="how">
+      <h2 class="sechead">how it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-name">host</div>
+          <div class="step-body"><code>ccshare host</code> wraps claude in a real pty and prints a code. you keep using claude exactly as before.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-name">share the code</div>
+          <div class="step-body">say it out loud. on the same wifi that is the whole setup: discovery is a udp broadcast carrying a hash of the code, never the code itself.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-name">join</div>
+          <div class="step-body"><code>ccshare join 7KQ2FM</code> attaches read-write. their keystrokes land in your session. <code>Ctrl-]</code> detaches without killing it.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="col-narrow"><hr class="rule" /></div>
+
+    <section class="section col-narrow">
+      <h2 class="sechead">the details</h2>
+      <ul class="featlist">
+        <li class="feat"><span class="feat-name">smallest terminal wins</span><span class="feat-desc">the pty resizes to the smallest connected terminal, tmux-style, so everyone sees the same frame. joiners get 256KB of scrollback replayed plus a forced repaint.</span></li>
+        <li class="feat"><span class="feat-name">relay for anywhere</span><span class="feat-desc">different networks? run <code>ccshare relay</code> on any box you own. it is a dumb pipe that pairs rooms by code and forwards frames. set <code>CCSHARE_RELAY</code> once and host/join fall back to it automatically.</span></li>
+        <li class="feat"><span class="feat-name">direct over tailscale</span><span class="feat-desc"><code>ccshare join CODE --host 100.x.y.z:42518</code> connects straight through. no relay, no extra server.</span></li>
+        <li class="feat"><span class="feat-name">read-only mode</span><span class="feat-desc"><code>ccshare host --read-only</code> lets friends watch a session without touching it. good for demos and rubber-ducking.</span></li>
+        <li class="feat"><span class="feat-name">not just claude</span><span class="feat-desc"><code>ccshare host --cmd bash</code> shares any terminal program. it is a pty mirror, claude is just the point.</span></li>
+        <li class="feat"><span class="feat-name">both directions</span><span class="feat-desc">you host and they join, or they host and you join. same command, either side.</span></li>
+      </ul>
+    </section>
+
+    <div class="col-narrow"><hr class="rule" /></div>
+
+    <section class="section col-narrow" id="security">
+      <h2 class="sechead">security, plainly</h2>
+      <div class="warn">
+        <div class="warn-head">the code is the only auth</div>
+        <p>anyone holding a live code can type into a real shell on the host's machine. share codes like you'd hand over your laptop, and only with people you trust. codes die when the session ends. lan traffic stays on your network; if you deploy a relay, put it behind wss:// so terminal bytes are encrypted in transit.</p>
+      </div>
+    </section>
+
+    <div class="col-wide">
+      <footer class="footer">
+        <span><span class="green">$</span> ccshare &middot; MIT license</span>
+        <span>~700 lines of node &middot; built on <a href="https://github.com/microsoft/node-pty">node-pty</a> + <a href="https://github.com/websockets/ws">ws</a> &middot; <a href="https://github.com/unworld11/ccshare">github.com/unworld11/ccshare</a></span>
+      </footer>
+    </div>
+
+    <script>
+      const btn = document.getElementById('copybtn');
+      btn.addEventListener('click', () => {
+        const cmd = 'git clone https://github.com/unworld11/ccshare && cd ccshare && npm i && npm link';
+        if (navigator.clipboard) navigator.clipboard.writeText(cmd);
+        btn.textContent = 'copied';
+        setTimeout(() => { btn.textContent = 'copy'; }, 1600);
+      });
+    </script>
+  </body>
+</html>
