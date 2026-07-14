@@ -102,7 +102,7 @@
         <span class="install-scroll" id="install-cmd">curl -fsSL https://getccshare.vercel.app/install.sh | sh</span>
         <button class="copybtn" id="copybtn" type="button">copy</button>
       </div>
-      <p class="hero-sub">installs to ~/ccshare; re-run the same command to update &middot; MIT &middot; no accounts &middot; no telemetry &middot; <a href="https://github.com/unworld11/ccshare">source on github</a></p>
+      <p class="hero-sub">installs to ~/ccshare, onboards you on first run; re-run the same command to update &middot; MIT &middot; no accounts &middot; no telemetry &middot; <a href="https://github.com/unworld11/ccshare">source on github</a></p>
     </header>
 
     <section class="section col-wide">
@@ -173,6 +173,7 @@
         <li class="feat"><span class="feat-name">direct over tailscale</span><span class="feat-desc"><code>ccshare join CODE --host 100.x.y.z:42518</code> connects straight through. no relay, no extra server.</span></li>
         <li class="feat"><span class="feat-name">read-only mode</span><span class="feat-desc"><code>ccshare host --read-only</code> lets friends watch a session without touching it. good for demos and rubber-ducking.</span></li>
         <li class="feat"><span class="feat-name">not just claude</span><span class="feat-desc"><code>ccshare host codex</code>, <code>ccshare host opencode</code>, <code>ccshare host kimi</code> - it is a pty mirror, so every terminal agent works. claude is just the default.</span></li>
+        <li class="feat"><span class="feat-name">30-second onboarding</span><span class="feat-desc"><code>ccshare setup</code> (auto on first host) asks your name, finds the agents you have installed, and saves your defaults to <code>~/.ccshare/config.json</code>. flags always override.</span></li>
         <li class="feat"><span class="feat-name">both directions</span><span class="feat-desc">you host and they join, or they host and you join. same command, either side.</span></li>
       </ul>
     </section>

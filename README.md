@@ -30,6 +30,12 @@ pulls the latest once you're installed. If `ccshare` isn't found after `npm link
 (homebrew's node links into the Cellar, which isn't on PATH), the installer handles
 it; manually it's `ln -sf "$PWD/bin/ccshare.js" /opt/homebrew/bin/ccshare`.
 
+Then run `ccshare setup` (or just `ccshare host` - it onboards you the first time):
+a 30-second interactive wizard that asks your display name, detects which coding
+agents you have installed and sets your default, and picks tunnel + menu bar
+preferences. Everything lands in `~/.ccshare/config.json`; per-session flags always
+win over it, and rerunning `ccshare setup` changes it any time.
+
 node-pty ships prebuilt binaries, but npm strips the exec bit off its
 `spawn-helper` - the postinstall script in this package restores it. If claude
 ever fails to start with `posix_spawnp failed`, run `npm rebuild` here.

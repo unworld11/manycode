@@ -39,6 +39,11 @@ const HELP = `ccshare - multiplayer claude code
       start the macOS menu bar helper by hand. it stays until you quit it
       from the menu. hosting starts it automatically.
 
+  ccshare setup
+      interactive onboarding: your name, default agent (claude, codex,
+      opencode, kimi…), tunnel and menu bar preferences. runs by itself
+      the first time you host; rerun it whenever you like.
+
   ccshare update
       pull the latest ccshare from github and reinstall deps. host and
       join tell you when you're behind.
@@ -118,18 +123,26 @@ if (cmd === 'host') {
     '--no-menubar': 'noMenubar',
   });
   const relay = o.noRelay ? null : (o.relay || process.env.CCSHARE_RELAY || null);
-  require('../lib/host').host({
-    relay,
-    port: o.port != null ? Number(o.port) : null,
-    code: o.code,
-    readOnly: !!o.readOnly,
-    max: o.max ? Number(o.max) : undefined,
-    cmd: o.cmd || (cmdline && cmdline[0]) || 'claude',
-    tunnel: !!o.tunnel,
-    noTunnel: !!o.noTunnel,
-    noMenubar: !!o.noMenubar,
-    claudeArgs: cmdline ? cmdline.slice(1).concat(o.rest || []) : (o.rest || []),
-  }).catch((e) => die('ccshare: ' + e.message));
+  (async () => {
+    const config = require('../lib/config');
+    // first ever run: onboard before hosting (Ctrl-C skips, saves defaults)
+    if (!config.exists() && process.stdin.isTTY) {
+      await require('../lib/setup').run({ keepStdin: true });
+    }
+    const cfg = config.load();
+    return require('../lib/host').host({
+      relay,
+      port: o.port != null ? Number(o.port) : null,
+      code: o.code,
+      readOnly: !!o.readOnly,
+      max: o.max ? Number(o.max) : undefined,
+      cmd: o.cmd || (cmdline && cmdline[0]) || cfg.agent || 'claude',
+      tunnel: !!o.tunnel,
+      noTunnel: !!o.noTunnel || cfg.tunnel === false,
+      noMenubar: !!o.noMenubar || cfg.menubar === false,
+      claudeArgs: cmdline ? cmdline.slice(1).concat(o.rest || []) : (o.rest || []),
+    });
+  })().catch((e) => die('ccshare: ' + e.message));
 } else if (cmd === 'join') {
   const o = parseFlags(argv, {
     '--host=': 'host',
@@ -159,6 +172,8 @@ if (cmd === 'host') {
       if (s.tunnel) console.log(`        anywhere: ccshare join ${s.code} --host ${s.tunnel}`);
     }
   }
+} else if (cmd === 'setup') {
+  require('../lib/setup').run().then(() => process.exit(0)).catch(() => process.exit(1));
 } else if (cmd === 'update') {
   require('../lib/update').runUpdate();
 } else if (cmd === 'menubar') {

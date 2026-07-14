@@ -38,7 +38,8 @@ fi
 
 echo ""
 if command -v ccshare >/dev/null 2>&1; then
-  echo "ccshare $(git -C "$DIR" rev-parse --short HEAD) ready. host a session with: ccshare host"
+  echo "ccshare $(git -C "$DIR" rev-parse --short HEAD) ready."
+  echo "next: ccshare setup   (30-second onboarding, or just run: ccshare host)"
 else
   echo "ccshare: installed at $DIR but no writable bin dir on PATH."
   echo "add this line to your shell profile:"
