@@ -7,17 +7,18 @@ The host runs Claude in a PTY and mirrors the terminal; everyone who joins sees 
 same screen and (unless you say otherwise) can type into the same session. Works in
 both directions - you host and they join, or they host and you join.
 
-## Install
+## Install (and update)
 
 ```sh
-git clone <this repo> && cd ccshare
-npm install
-npm link          # puts `ccshare` on your PATH
+curl -fsSL https://getccshare.vercel.app/install.sh | sh
 ```
 
-Every friend does the same. If `ccshare` isn't found after `npm link` (homebrew's
-node links into the Cellar, which isn't on PATH), symlink it directly:
-`ln -sf "$PWD/bin/ccshare.js" /opt/homebrew/bin/ccshare`.
+One command for everything: fresh install, and re-run it any time to update (it
+clones to `~/ccshare`, or hard-updates the existing clone when it's clean). Prefer
+doing it by hand? `git clone`, `npm i`, `npm link` works too - and `ccshare update`
+pulls the latest once you're installed. If `ccshare` isn't found after `npm link`
+(homebrew's node links into the Cellar, which isn't on PATH), the installer handles
+it; manually it's `ln -sf "$PWD/bin/ccshare.js" /opt/homebrew/bin/ccshare`.
 
 node-pty ships prebuilt binaries, but npm strips the exec bit off its
 `spawn-helper` - the postinstall script in this package restores it. If claude

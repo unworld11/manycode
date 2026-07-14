@@ -99,10 +99,10 @@
       <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal, sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a free tunnel.</p>
       <div class="install">
         <span class="install-prompt">$</span>
-        <span class="install-scroll" id="install-cmd">git clone https://github.com/unworld11/ccshare &amp;&amp; cd ccshare &amp;&amp; npm i &amp;&amp; npm link</span>
+        <span class="install-scroll" id="install-cmd">curl -fsSL https://getccshare.vercel.app/install.sh | sh</span>
         <button class="copybtn" id="copybtn" type="button">copy</button>
       </div>
-      <p class="hero-sub">MIT licensed &middot; no accounts &middot; no telemetry &middot; <a href="https://github.com/unworld11/ccshare">source on github</a></p>
+      <p class="hero-sub">installs to ~/ccshare; re-run the same command to update &middot; MIT &middot; no accounts &middot; no telemetry &middot; <a href="https://github.com/unworld11/ccshare">source on github</a></p>
     </header>
 
     <section class="section col-wide">
@@ -168,7 +168,7 @@
       <ul class="featlist">
         <li class="feat"><span class="feat-name">smallest terminal wins</span><span class="feat-desc">the pty resizes to the smallest connected terminal, tmux-style, so everyone sees the same frame. joiners get 256KB of scrollback replayed plus a forced repaint.</span></li>
         <li class="feat"><span class="feat-name">tunnel anywhere</span><span class="feat-desc">hosting opens a free cloudflare quick tunnel by default. cloudflared comes bundled, no account needed. friends on any network join through a random wss:// url that dies with your session. <code>--no-tunnel</code> keeps it lan-only.</span></li>
-        <li class="feat"><span class="feat-name">menu bar code</span><span class="feat-desc">on macos, hosting puts your live code in the menu bar: click to copy the join command, see who's connected, get a ping when a friend joins.</span></li>
+        <li class="feat"><span class="feat-name">menu bar code</span><span class="feat-desc">on macos, hosting puts your live code in the menu bar: click to copy the join command, see who's connected, get a ping when a friend joins. the icon turns into a globe when the anywhere link is ready.</span></li>
         <li class="feat"><span class="feat-name">relay, if you'd rather self-host</span><span class="feat-desc">run <code>ccshare relay</code> on any box you own. it is a dumb pipe that pairs rooms by code and forwards frames. set <code>CCSHARE_RELAY</code> once and host/join fall back to it automatically.</span></li>
         <li class="feat"><span class="feat-name">direct over tailscale</span><span class="feat-desc"><code>ccshare join CODE --host 100.x.y.z:42518</code> connects straight through. no relay, no extra server.</span></li>
         <li class="feat"><span class="feat-name">read-only mode</span><span class="feat-desc"><code>ccshare host --read-only</code> lets friends watch a session without touching it. good for demos and rubber-ducking.</span></li>
@@ -197,7 +197,7 @@
     <script>
       const btn = document.getElementById('copybtn');
       btn.addEventListener('click', () => {
-        const cmd = 'git clone https://github.com/unworld11/ccshare && cd ccshare && npm i && npm link';
+        const cmd = 'curl -fsSL https://getccshare.vercel.app/install.sh | sh';
         if (navigator.clipboard) navigator.clipboard.writeText(cmd);
         btn.textContent = 'copied';
         setTimeout(() => { btn.textContent = 'copy'; }, 1600);
