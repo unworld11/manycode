@@ -24,6 +24,7 @@ struct SessionState: Codable {
     let pid: Int32
     let code: String
     let port: Int?
+    let ip: String?
     let cwd: String?
     let joiners: Int?
     let names: [String]?
@@ -166,6 +167,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             addRow(menu, "copy code", icon: "doc.on.doc", action: #selector(copyItem(_:)), payload: s.code)
             addRow(menu, "copy join command", icon: "arrow.right.doc.on.clipboard", action: #selector(copyItem(_:)), payload: "ccshare join \(s.code)")
+            if let ip = s.ip, let port = s.port {
+                addRow(menu, "copy direct join command", icon: "network", action: #selector(copyItem(_:)), payload: "ccshare join \(s.code) --host \(ip):\(port)")
+            }
             if let t = s.tunnel {
                 addRow(menu, "copy remote join command", icon: "globe", action: #selector(copyItem(_:)), payload: "ccshare join \(s.code) --host \(t)")
             }
