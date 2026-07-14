@@ -3,15 +3,15 @@
 
 const HELP = `ccshare - multiplayer claude code
 
-  ccshare host [options] [-- <claude args>]
-      share the claude session you're about to start. prints a join code.
+  ccshare host [options] [command [args...]]
+      share a live terminal session with a join code. defaults to claude;
+      name any agent to share it instead: codex, opencode, kimi, aider…
       --relay <url>    also accept joiners through a relay (or set CCSHARE_RELAY)
       --no-relay       ignore CCSHARE_RELAY for this session
       --port <n>       websocket port for direct joiners (default 42518)
       --code <code>    pick your own code instead of a random one
       --read-only      joiners can watch but not type
       --max <n>        max simultaneous joiners (default 5)
-      --cmd <bin>      run something other than 'claude'
       --tunnel         wait for the cloudflare tunnel at startup so the
                        banner shows the remote join link
       --no-tunnel      don't open a tunnel. tunnels are on by default
@@ -46,7 +46,9 @@ const HELP = `ccshare - multiplayer claude code
 examples
   you:            cd my-project && ccshare host
   friend (wifi):  ccshare join 7KQ2FM
-  friend (remote): ccshare join 7KQ2FM --relay wss://relay.example.com
+  friend (remote): ccshare join 7KQ2FM --host wss://….trycloudflare.com
+  other agents:   ccshare host codex        ccshare host opencode
+  claude w/ args: ccshare host -- --resume
 `;
 
 function die(msg) {
@@ -89,6 +91,20 @@ const argv = process.argv.slice(2);
 const cmd = argv.shift();
 
 if (cmd === 'host') {
+  // the first bare word starts the command to share (codex, opencode, …);
+  // everything after it is that command's own argv
+  const valueFlags = new Set(['--relay', '--port', '--code', '--max', '--cmd']);
+  let cmdline = null;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--') break;
+    if (a.startsWith('--')) {
+      if (valueFlags.has(a)) i++;
+      continue;
+    }
+    cmdline = argv.splice(i);
+    break;
+  }
   const o = parseFlags(argv, {
     '--relay=': 'relay',
     '--no-relay': 'noRelay',
@@ -108,11 +124,11 @@ if (cmd === 'host') {
     code: o.code,
     readOnly: !!o.readOnly,
     max: o.max ? Number(o.max) : undefined,
-    cmd: o.cmd || 'claude',
+    cmd: o.cmd || (cmdline && cmdline[0]) || 'claude',
     tunnel: !!o.tunnel,
     noTunnel: !!o.noTunnel,
     noMenubar: !!o.noMenubar,
-    claudeArgs: o.rest || [],
+    claudeArgs: cmdline ? cmdline.slice(1).concat(o.rest || []) : (o.rest || []),
   }).catch((e) => die('ccshare: ' + e.message));
 } else if (cmd === 'join') {
   const o = parseFlags(argv, {

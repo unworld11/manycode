@@ -29,6 +29,7 @@ struct SessionState: Codable {
     let joiners: Int?
     let names: [String]?
     let tunnel: String?
+    let cmd: String?
 }
 
 let accent = NSColor(calibratedRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
@@ -152,7 +153,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         for s in sessions {
-            let dir = s.cwd.map { ($0 as NSString).lastPathComponent } ?? ""
+            var dir = s.cwd.map { ($0 as NSString).lastPathComponent } ?? ""
+            if let c = s.cmd, c != "claude" { dir += " \u{00b7} \(c)" }
             let head = NSMenuItem(title: "", action: nil, keyEquivalent: "")
             let t = NSMutableAttributedString(
                 string: spaced(s.code) + "\n",

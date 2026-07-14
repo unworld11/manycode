@@ -75,9 +75,10 @@ async function testRelay() {
   let host = null;
   try {
     await wait(600);
+    // positional command form: `ccshare host bash -c …`, like `ccshare host codex`
     host = spawn('node', [
       BIN, 'host', '--relay', 'ws://127.0.0.1:45998', '--no-menubar', '--no-tunnel', '--port', '45997', '--code', 'TEST43',
-      '--cmd', 'bash', '--', '-c', 'echo MARKER_READY; exec cat',
+      'bash', '-c', 'echo MARKER_READY; exec cat',
     ], { stdio: 'pipe' });
     await wait(1500);
     const ws = await joinWs('ws://127.0.0.1:45998', 'TEST43', 'remote-friend');

@@ -3,9 +3,19 @@
 **[getccshare.vercel.app](https://getccshare.vercel.app)**
 
 Share your live Claude Code session with friends using a short code, AirDrop-style.
-The host runs Claude in a PTY and mirrors the terminal; everyone who joins sees the
-same screen and (unless you say otherwise) can type into the same session. Works in
-both directions - you host and they join, or they host and you join.
+The host runs your agent in a PTY and mirrors the terminal; everyone who joins sees
+the same screen and (unless you say otherwise) can type into the same session. Works
+in both directions - you host and they join, or they host and you join.
+
+Claude Code is the default, but any terminal agent works - name it after `host`:
+
+```sh
+ccshare host              # claude
+ccshare host codex        # openai codex cli
+ccshare host opencode     # opencode
+ccshare host kimi         # kimi cli
+ccshare host aider --model gpt-5   # args pass straight through
+```
 
 ## Install (and update)
 
@@ -83,7 +93,7 @@ code back:
 
 - `ccshare host --read-only` - friends can watch but not type.
 - `ccshare host -- --resume` - everything after `--` goes to claude itself.
-- `ccshare host --cmd bash` - share any terminal program, not just claude.
+- `ccshare host <anything>` - share any terminal program, agents or otherwise.
 - `ccshare join CODE --name dev-priya` - how you appear on the host's side.
 - `ccshare host --max 2` - cap joiners (default 5).
 
