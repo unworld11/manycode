@@ -35,6 +35,11 @@ const HELP = `ccshare - multiplayer claude code
       print the codes of your active sessions (the banner scrolls away
       once claude starts drawing; this gets them back).
 
+  ccshare tunnel [code]
+      open the anywhere-tunnel on a session that's already running -
+      for when you started lan-only and now want to invite someone
+      remote. prints the join command when the tunnel is up.
+
   ccshare menubar
       start the macOS menu bar helper by hand. it stays until you quit it
       from the menu. hosting starts it automatically.
@@ -175,6 +180,34 @@ if (cmd === 'host') {
       if (s.tunnel) console.log(`        anywhere: ccshare join ${s.code} --host ${s.tunnel}`);
     }
   }
+} else if (cmd === 'tunnel') {
+  const fs = require('fs');
+  const path = require('path');
+  const os = require('os');
+  const { normalizeCode } = require('../lib/codes');
+  const sessions = require('../lib/state').list();
+  const wanted = normalizeCode(argv[0]);
+  const matches = wanted ? sessions.filter((s) => s.code === wanted) : sessions;
+  if (!matches.length) die(wanted ? `ccshare: no active session with code ${wanted}` : 'ccshare: no active sessions');
+  if (matches.length > 1) die('ccshare: several sessions running - pick one: ccshare tunnel <code>\n' + matches.map((s) => `  ${s.code}  ${path.basename(s.cwd || '')}`).join('\n'));
+  const s = matches[0];
+  if (s.tunnel) {
+    console.log(`already open: ccshare join ${s.code} --host ${s.tunnel}`);
+    process.exit(0);
+  }
+  fs.writeFileSync(path.join(os.homedir(), '.ccshare', 'sessions', s.pid + '.tunnel-request'), '');
+  process.stderr.write('ccshare: asking the session to open a tunnel…\n');
+  const t0 = Date.now();
+  const poll = setInterval(() => {
+    const cur = require('../lib/state').list().find((x) => x.pid === s.pid);
+    if (cur && cur.tunnel) {
+      clearInterval(poll);
+      console.log(`anywhere: ccshare join ${cur.code} --host ${cur.tunnel}`);
+      process.exit(0);
+    }
+    if (!cur) { clearInterval(poll); die('ccshare: that session ended'); }
+    if (Date.now() - t0 > 90000) { clearInterval(poll); die('ccshare: tunnel did not come up in 90s - check the host terminal'); }
+  }, 1500);
 } else if (cmd === 'setup') {
   require('../lib/setup').run().then(() => process.exit(0)).catch(() => process.exit(1));
 } else if (cmd === 'update') {
