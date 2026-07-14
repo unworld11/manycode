@@ -39,6 +39,10 @@ const HELP = `ccshare - multiplayer claude code
       start the macOS menu bar helper by hand. it stays until you quit it
       from the menu. hosting starts it automatically.
 
+  ccshare update
+      pull the latest ccshare from github and reinstall deps. host and
+      join tell you when you're behind.
+
 examples
   you:            cd my-project && ccshare host
   friend (wifi):  ccshare join 7KQ2FM
@@ -139,6 +143,8 @@ if (cmd === 'host') {
       if (s.tunnel) console.log(`        anywhere: ccshare join ${s.code} --host ${s.tunnel}`);
     }
   }
+} else if (cmd === 'update') {
+  require('../lib/update').runUpdate();
 } else if (cmd === 'menubar') {
   const ok = require('../lib/menubar').launch((m) => process.stderr.write(m), { persistent: true });
   console.log(ok ? 'ccshare: menu bar helper running' : 'ccshare: could not start the menu bar helper (needs macOS with the Xcode command line tools)');

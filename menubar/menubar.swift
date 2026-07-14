@@ -113,13 +113,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // avoid rebuilding the menu (and closing it under the cursor) when nothing changed
-        let snapshot = sessions.map { "\($0.pid):\($0.code):\($0.joiners ?? 0):\(($0.names ?? []).joined(separator: ","))" }.joined(separator: "|")
+        let snapshot = sessions.map { "\($0.pid):\($0.code):\($0.joiners ?? 0):\(($0.names ?? []).joined(separator: ",")):\($0.tunnel ?? "-")" }.joined(separator: "|")
         if snapshot == lastSnapshot { return }
         lastSnapshot = snapshot
 
         statusItem.button?.title = sessions.isEmpty
             ? " idle"
             : " " + sessions.map { spaced($0.code) }.joined(separator: "  \u{00b7}  ")
+        // globe once an anywhere link is live, terminal until then
+        let anywhere = sessions.contains { $0.tunnel != nil }
+        statusItem.button?.image = anywhere
+            ? (symbol("globe") ?? symbol("terminal"))
+            : (symbol("terminal.fill") ?? symbol("terminal"))
         buildMenu(sessions)
     }
 
