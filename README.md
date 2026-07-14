@@ -95,6 +95,14 @@ code back:
 - **`ccshare code`** - prints the code, project, and joiner list for every active
   session, on any platform.
 
+## Group sessions and late invites
+
+Up to 5 friends can be in one session (`--max` changes that); everyone sees the same
+screen and everyone can type. Nobody has to be there at the start - the code works
+for the whole session, and late joiners get the recent scrollback replayed plus a
+fresh repaint. Started lan-only and now want someone remote? `ccshare tunnel` opens
+the anywhere-link on the running session and prints the join command - no restart.
+
 ## Useful flags
 
 - `ccshare host --read-only` - friends can watch but not type.
