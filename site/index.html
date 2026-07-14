@@ -96,7 +96,7 @@
 
     <header class="hero col-narrow">
       <h1 class="h1"><span class="h1line">multiplayer</span><span class="h1line">claude code<span class="orange">.</span></span></h1>
-      <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal, sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a relay you own.</p>
+      <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal, sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a free tunnel.</p>
       <div class="install">
         <span class="install-prompt">$</span>
         <span class="install-scroll" id="install-cmd">git clone https://github.com/unworld11/ccshare &amp;&amp; cd ccshare &amp;&amp; npm i &amp;&amp; npm link</span>
@@ -167,7 +167,9 @@
       <h2 class="sechead">the details</h2>
       <ul class="featlist">
         <li class="feat"><span class="feat-name">smallest terminal wins</span><span class="feat-desc">the pty resizes to the smallest connected terminal, tmux-style, so everyone sees the same frame. joiners get 256KB of scrollback replayed plus a forced repaint.</span></li>
-        <li class="feat"><span class="feat-name">relay for anywhere</span><span class="feat-desc">different networks? run <code>ccshare relay</code> on any box you own. it is a dumb pipe that pairs rooms by code and forwards frames. set <code>CCSHARE_RELAY</code> once and host/join fall back to it automatically.</span></li>
+        <li class="feat"><span class="feat-name">tunnel anywhere</span><span class="feat-desc"><code>ccshare host --tunnel</code> opens a free cloudflare quick tunnel, no account needed. friends on any network join through a random wss:// url that dies with your session.</span></li>
+        <li class="feat"><span class="feat-name">menu bar code</span><span class="feat-desc">on macos, hosting puts your live code in the menu bar: click to copy the join command, see who's connected, get a ping when a friend joins.</span></li>
+        <li class="feat"><span class="feat-name">relay, if you'd rather self-host</span><span class="feat-desc">run <code>ccshare relay</code> on any box you own. it is a dumb pipe that pairs rooms by code and forwards frames. set <code>CCSHARE_RELAY</code> once and host/join fall back to it automatically.</span></li>
         <li class="feat"><span class="feat-name">direct over tailscale</span><span class="feat-desc"><code>ccshare join CODE --host 100.x.y.z:42518</code> connects straight through. no relay, no extra server.</span></li>
         <li class="feat"><span class="feat-name">read-only mode</span><span class="feat-desc"><code>ccshare host --read-only</code> lets friends watch a session without touching it. good for demos and rubber-ducking.</span></li>
         <li class="feat"><span class="feat-name">not just claude</span><span class="feat-desc"><code>ccshare host --cmd bash</code> shares any terminal program. it is a pty mirror, claude is just the point.</span></li>

@@ -43,7 +43,7 @@ function joinWs(url, code, name) {
 
 async function testDirect() {
   const host = spawn('node', [
-    BIN, 'host', '--no-relay', '--port', '45999', '--code', 'TEST42',
+    BIN, 'host', '--no-relay', '--no-menubar', '--port', '45999', '--code', 'TEST42',
     '--cmd', 'bash', '--', '-c', 'echo MARKER_READY; exec cat',
   ], { stdio: ['pipe', 'pipe', 'pipe'] });
   try {
@@ -76,7 +76,7 @@ async function testRelay() {
   try {
     await wait(600);
     host = spawn('node', [
-      BIN, 'host', '--relay', 'ws://127.0.0.1:45998', '--port', '45997', '--code', 'TEST43',
+      BIN, 'host', '--relay', 'ws://127.0.0.1:45998', '--no-menubar', '--port', '45997', '--code', 'TEST43',
       '--cmd', 'bash', '--', '-c', 'echo MARKER_READY; exec cat',
     ], { stdio: 'pipe' });
     await wait(1500);

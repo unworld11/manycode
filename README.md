@@ -39,8 +39,15 @@ automatically - no IPs. `Ctrl-]` detaches a joiner without touching the session.
 
 ## Different networks
 
-Two options:
+Three options, easiest first:
 
+- **Tunnel:** `ccshare host --tunnel` opens a free Cloudflare quick tunnel (needs
+  `brew install cloudflared`, no account) and prints a join command like
+  `ccshare join 7KQ2FM --host wss://random-words.trycloudflare.com` that works from
+  anywhere. The URL is random, unguessable, and dies with your session. The host
+  waits until the tunnel actually routes before printing it, and join falls back to
+  resolving fresh tunnel hostnames via 1.1.1.1 when the OS resolver has a stale
+  negative answer.
 - **Tailscale (or any reachable IP):** the host banner prints a direct line like
   `ccshare join 7KQ2FM --host 192.168.1.4:42518` - swap in the tailnet IP and it
   connects straight through, no extra server.
@@ -50,6 +57,20 @@ Two options:
   `ccshare host` registers with the relay automatically and `ccshare join CODE`
   falls back to it when LAN discovery finds nothing. The relay is a dumb pipe; it
   never sees your code in plaintext discovery, just relays frames for paired rooms.
+
+## The code scrolled away?
+
+Claude's UI takes over the screen right after the banner, so two things bring the
+code back:
+
+- **macOS menu bar** - hosting auto-starts a tiny status bar helper showing your live
+  code. Click it to copy the code or the whole join command, see who's connected, and
+  get a notification when a friend joins. It compiles itself from
+  `menubar/menubar.swift` on first run (needs the Xcode command line tools) and quits
+  when your sessions end. `ccshare host --no-menubar` opts out; `ccshare menubar`
+  starts it by hand and keeps it running.
+- **`ccshare code`** - prints the code, project, and joiner list for every active
+  session, on any platform.
 
 ## Useful flags
 

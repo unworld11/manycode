@@ -12,6 +12,9 @@ const HELP = `ccshare - multiplayer claude code
       --read-only      joiners can watch but not type
       --max <n>        max simultaneous joiners (default 5)
       --cmd <bin>      run something other than 'claude'
+      --tunnel         friends anywhere, zero setup: free cloudflare quick
+                       tunnel (needs cloudflared: brew install cloudflared)
+      --no-menubar     don't start the macOS menu bar helper
       -- <args>        everything after -- goes to claude (e.g. -- --resume)
 
   ccshare join <code> [options]
@@ -24,6 +27,14 @@ const HELP = `ccshare - multiplayer claude code
   ccshare relay [--port <n>]
       run a relay server so friends outside your network can join.
       default port 8787, or the PORT env var.
+
+  ccshare code
+      print the codes of your active sessions (the banner scrolls away
+      once claude starts drawing; this gets them back).
+
+  ccshare menubar
+      start the macOS menu bar helper by hand. it stays until you quit it
+      from the menu. hosting starts it automatically.
 
 examples
   you:            cd my-project && ccshare host
@@ -79,6 +90,8 @@ if (cmd === 'host') {
     '--read-only': 'readOnly',
     '--max=': 'max',
     '--cmd=': 'cmd',
+    '--tunnel': 'tunnel',
+    '--no-menubar': 'noMenubar',
   });
   const relay = o.noRelay ? null : (o.relay || process.env.CCSHARE_RELAY || null);
   require('../lib/host').host({
@@ -88,6 +101,8 @@ if (cmd === 'host') {
     readOnly: !!o.readOnly,
     max: o.max ? Number(o.max) : undefined,
     cmd: o.cmd || 'claude',
+    tunnel: !!o.tunnel,
+    noMenubar: !!o.noMenubar,
     claudeArgs: o.rest || [],
   }).catch((e) => die('ccshare: ' + e.message));
 } else if (cmd === 'join') {
@@ -107,6 +122,20 @@ if (cmd === 'host') {
   const o = parseFlags(argv, { '--port=': 'port' });
   const port = Number(o.port || process.env.PORT || 8787);
   require('../lib/relay').startRelay(port);
+} else if (cmd === 'code') {
+  const sessions = require('../lib/state').list();
+  if (!sessions.length) {
+    console.log('no active ccshare sessions');
+  } else {
+    for (const s of sessions) {
+      const dir = require('path').basename(s.cwd || '');
+      const who = s.names && s.names.length ? ` (${s.names.join(', ')})` : '';
+      console.log(`${s.code}  ${dir}  ${s.joiners || 0} connected${who}  port ${s.port}`);
+    }
+  }
+} else if (cmd === 'menubar') {
+  const ok = require('../lib/menubar').launch((m) => process.stderr.write(m), { persistent: true });
+  console.log(ok ? 'ccshare: menu bar helper running' : 'ccshare: could not start the menu bar helper (needs macOS with the Xcode command line tools)');
 } else {
   process.stderr.write(HELP);
   process.exit(cmd && cmd !== 'help' && cmd !== '--help' && cmd !== '-h' ? 1 : 0);
