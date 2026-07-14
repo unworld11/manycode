@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/site/index.html"
+    },
+    {
+      "source": "/install.sh",
+      "destination": "/site/install.sh"
+    }
+  ]
+}
