@@ -41,9 +41,9 @@ automatically - no IPs. `Ctrl-]` detaches a joiner without touching the session.
 
 Three options, easiest first:
 
-- **Tunnel (on by default):** when `cloudflared` is installed (`brew install
-  cloudflared`, no account needed), hosting opens a free Cloudflare quick tunnel in
-  the background. A few seconds later the remote join command - like
+- **Tunnel (on by default):** hosting opens a free Cloudflare quick tunnel in the
+  background - `cloudflared` comes bundled via npm, so there is nothing to install
+  and no account needed. A few seconds later the remote join command - like
   `ccshare join 7KQ2FM --host wss://random-words.trycloudflare.com` - appears in the
   menu bar ("copy remote join command") and in `ccshare code`. That command works
   from any network. The URL is random, unguessable, and dies with your session.

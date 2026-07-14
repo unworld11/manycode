@@ -14,9 +14,9 @@ const HELP = `ccshare - multiplayer claude code
       --cmd <bin>      run something other than 'claude'
       --tunnel         wait for the cloudflare tunnel at startup so the
                        banner shows the remote join link
-      --no-tunnel      don't open a tunnel. tunnels are on by default when
-                       cloudflared is installed (brew install cloudflared);
-                       the link appears in the menu bar and 'ccshare code'
+      --no-tunnel      don't open a tunnel. tunnels are on by default
+                       (cloudflared is bundled); the remote link appears
+                       in the menu bar and 'ccshare code'
       --no-menubar     don't start the macOS menu bar helper
       -- <args>        everything after -- goes to claude (e.g. -- --resume)
 
