@@ -183,7 +183,7 @@
       <h2 class="sechead">security, plainly</h2>
       <div class="warn">
         <div class="warn-head">the code is the only auth</div>
-        <p>anyone holding a live code can type into a real shell on the host's machine. share codes like you'd hand over your laptop, and only with people you trust. codes die when the session ends. lan traffic stays on your network; if you deploy a relay, put it behind wss:// so terminal bytes are encrypted in transit.</p>
+        <p>anyone holding a live code can type into a real shell on the host's machine. share codes like you'd hand over your laptop, and only with people you trust. codes die when the session ends. lan traffic stays on your network; the default tunnel exposes your session behind a random unguessable url plus the code - use --no-tunnel to keep a session lan-only.</p>
       </div>
     </section>
 
