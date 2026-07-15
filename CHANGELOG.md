@@ -4,6 +4,29 @@ ccshare installs and updates straight from git (`ccshare update` is a `git pull`
 so what you actually run is `master` HEAD - these tags just mark the points worth
 naming.
 
+## 0.3.0
+
+- **Join from a browser.** The host now serves an xterm.js terminal page on its
+  session port, so the tunnel URL doubles as a no-install join link:
+  `https://random-words.trycloudflare.com/#CODE` (or `http://lan-ip:port/#CODE` on
+  the same network). Full live terminal in the browser - phone included - same
+  replay, typing, and resize behavior as the CLI joiner. The link shows in the
+  banner, the menu bar, and `ccshare code`.
+- **`ccshare host --approve`.** Each joiner waits until you click Allow in a macOS
+  dialog; deny and they're told the host declined. Enforced for direct/LAN/tunnel
+  joiners (their input is dropped until admitted), best-effort over a relay (input
+  frames there aren't attributed per joiner). `ccshare setup` can make it the
+  default; `--no-approve` skips it per session.
+- **`ccshare host --record`.** Saves the session as an asciinema v2 `.cast` file in
+  the project directory (output and resizes, timestamped). Writes are synchronous
+  appends, so even a SIGTERM keeps the tail.
+- **Menu bar, rounder.** Copy-browser-link row; "open anywhere link" starts the
+  tunnel on a lan-only session right from the menu; "end session" stops a host
+  cleanly (same path as `ccshare stop`); the status title shows how many friends
+  are connected; copying flashes "copied ✓"; you get a notification when someone
+  leaves (with their name), not just when they join; recording and view-only
+  sessions are labeled.
+
 ## 0.2.0
 
 - **Slow joiners can't balloon host memory anymore.** Output for each joiner is

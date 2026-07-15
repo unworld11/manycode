@@ -29,7 +29,10 @@ struct SessionState: Codable {
     let joiners: Int?
     let names: [String]?
     let tunnel: String?
+    let browser: String?
     let cmd: String?
+    let readOnly: Bool?
+    let recording: String?
 }
 
 let accent = NSColor(calibratedRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
@@ -74,8 +77,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     var timer: Timer?
     var lastCounts: [Int32: Int] = [:]
+    var lastNames: [Int32: [String]] = [:]
     var lastSnapshot = "\u{0}"
     var emptySince: Date? = nil
+    var flashUntil: Date? = nil
     let auto = CommandLine.arguments.contains("--auto")
 
     func applicationDidFinishLaunching(_ n: Notification) {
@@ -106,21 +111,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for s in sessions {
             let prev = lastCounts[s.pid] ?? 0
             let cur = s.joiners ?? 0
+            let names = s.names ?? []
             if cur > prev {
                 let name = s.names?.last.map { " (\($0))" } ?? ""
                 notify("friend connected\(name) \u{00b7} \(s.code)")
+            } else if cur < prev {
+                // whoever is in the old roster but not the new one left
+                let old = lastNames[s.pid] ?? []
+                var remaining = names
+                var gone: [String] = []
+                for n in old {
+                    if let i = remaining.firstIndex(of: n) { remaining.remove(at: i) } else { gone.append(n) }
+                }
+                let who = gone.isEmpty ? "a friend" : gone.joined(separator: ", ")
+                notify("\(who) left \u{00b7} \(s.code)")
             }
             lastCounts[s.pid] = cur
+            lastNames[s.pid] = names
         }
 
+        // don't stomp the "copied ✓" flash mid-display
+        if let f = flashUntil, Date() < f { return }
+        flashUntil = nil
+
         // avoid rebuilding the menu (and closing it under the cursor) when nothing changed
-        let snapshot = sessions.map { "\($0.pid):\($0.code):\($0.joiners ?? 0):\(($0.names ?? []).joined(separator: ",")):\($0.tunnel ?? "-")" }.joined(separator: "|")
+        let snapshot = sessions.map { "\($0.pid):\($0.code):\($0.joiners ?? 0):\(($0.names ?? []).joined(separator: ",")):\($0.tunnel ?? "-"):\($0.browser ?? "-"):\($0.recording ?? "-"):\($0.readOnly ?? false)" }.joined(separator: "|")
         if snapshot == lastSnapshot { return }
         lastSnapshot = snapshot
 
         statusItem.button?.title = sessions.isEmpty
             ? " idle"
-            : " " + sessions.map { spaced($0.code) }.joined(separator: "  \u{00b7}  ")
+            : " " + sessions.map { s -> String in
+                let n = s.joiners ?? 0
+                return spaced(s.code) + (n > 0 ? " \u{00b7}\(n)" : "")
+              }.joined(separator: "   ")
         // globe once an anywhere link is live, terminal until then
         let anywhere = sessions.contains { $0.tunnel != nil }
         statusItem.button?.image = anywhere
@@ -179,6 +203,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             if let t = s.tunnel {
                 addRow(menu, "copy remote join command", icon: "globe", action: #selector(copyItem(_:)), payload: "ccshare join \(s.code) --host \(t)")
+            } else {
+                // same mechanism as `ccshare tunnel`: drop a request file, the
+                // host picks it up within a couple of seconds
+                addRow(menu, "open anywhere link\u{2026}", icon: "globe", action: #selector(openTunnel(_:)), payload: String(s.pid))
+            }
+            if let b = s.browser {
+                addRow(menu, "copy browser link", icon: "safari", action: #selector(copyItem(_:)), payload: b)
             }
 
             let n = s.joiners ?? 0
@@ -188,6 +219,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } else {
                 addRow(menu, "\(n) connected\(names.isEmpty ? "" : ": \(names)")", icon: n > 1 ? "person.2.fill" : "person.fill")
             }
+            if s.readOnly == true {
+                addRow(menu, "view-only session", icon: "eye")
+            }
+            if let r = s.recording {
+                addRow(menu, "recording \u{00b7} \((r as NSString).lastPathComponent)", icon: "record.circle")
+            }
+            addRow(menu, "end session", icon: "xmark.circle", action: #selector(endSession(_:)), payload: String(s.pid))
             menu.addItem(.separator())
         }
 
@@ -202,6 +240,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let s = sender.representedObject as? String {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(s, forType: .string)
+            flash("copied \u{2713}")
+        }
+    }
+
+    @objc func openTunnel(_ sender: NSMenuItem) {
+        guard let pid = sender.representedObject as? String else { return }
+        let req = stateDir.appendingPathComponent("\(pid).tunnel-request")
+        try? Data().write(to: req)
+        flash("opening\u{2026}")
+    }
+
+    @objc func endSession(_ sender: NSMenuItem) {
+        guard let s = sender.representedObject as? String, let pid = Int32(s) else { return }
+        kill(pid, SIGTERM)
+        flash("ended")
+    }
+
+    // brief status-bar feedback so a click visibly did something
+    func flash(_ text: String) {
+        statusItem.button?.title = " \(text)"
+        flashUntil = Date().addingTimeInterval(0.9)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.flashUntil = nil
+            self.lastSnapshot = "\u{0}" // force the next refresh to redraw
+            self.refresh()
         }
     }
 

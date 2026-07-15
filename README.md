@@ -71,6 +71,17 @@ Three options, easiest first:
 
   Note for friends who cloned early: joining a `wss://` URL needs the current
   version, so have them `git pull` in their ccshare checkout.
+
+## Join from a browser - nothing to install
+
+The host also serves a terminal web page on the same port, so every session has a
+browser link like `https://random-words.trycloudflare.com/#7KQ2FM` (or
+`http://192.168.1.4:42518/#7KQ2FM` on the same network). Send it to a friend and
+they're in the live session from any browser - phone included - with the code
+prefilled; no git clone, no node, nothing. It's a full xterm.js terminal speaking
+the same protocol as the CLI joiner, so they see the same screen and can type
+unless the session is `--read-only`. The link shows in the host banner, the menu
+bar ("copy browser link"), and `ccshare code`.
 - **Tailscale (or any reachable IP):** the host banner prints a direct line like
   `ccshare join 7KQ2FM --host 192.168.1.4:42518` - swap in the tailnet IP and it
   connects straight through, no extra server.
@@ -87,8 +98,9 @@ Claude's UI takes over the screen right after the banner, so two things bring th
 code back:
 
 - **macOS menu bar** - hosting auto-starts a tiny status bar helper showing your live
-  code. Click it to copy the code or the whole join command, see who's connected, and
-  get a notification when a friend joins. It compiles itself from
+  code (and how many friends are on). Click it to copy the code, join commands, or
+  the browser link; open the anywhere-tunnel on a lan-only session; end the session;
+  and get notifications when friends join or leave. It compiles itself from
   `menubar/menubar.swift` on first run (needs the Xcode command line tools) and quits
   when your sessions end. `ccshare host --no-menubar` opts out; `ccshare menubar`
   starts it by hand and keeps it running.
@@ -107,6 +119,12 @@ the anywhere-link on the running session and prints the join command - no restar
 ## Useful flags
 
 - `ccshare host --read-only` - friends can watch but not type.
+- `ccshare host --approve` - each joiner waits until you click Allow in a macOS
+  dialog; `ccshare setup` can make that the default, `--no-approve` skips it for
+  one session.
+- `ccshare host --record` - saves the whole session as an asciinema `.cast` file
+  in the project directory; play it back with `asciinema play` or upload it to
+  asciinema.org.
 - `ccshare host -- --resume` - everything after `--` goes to claude itself.
 - `ccshare host <anything>` - share any terminal program, agents or otherwise.
 - `ccshare join CODE --name dev-priya` - how you appear on the host's side.
@@ -127,3 +145,9 @@ host's machine - that means running arbitrary commands. Only share codes with pe
 you'd hand your laptop to. Codes die with the session, direct/LAN traffic is plain
 `ws://` on your local network, and the relay sees terminal bytes, so put the relay
 behind TLS (`wss://`) if you deploy one.
+
+`--approve` adds a second gate: a joiner with the right code still waits until you
+click Allow. That's enforced by the host for direct, LAN, and tunnel joiners (their
+input is dropped until admitted). Over a self-hosted relay it's best-effort - relay
+input frames aren't attributed per joiner, so treat approval there as protection
+against accidental joins, not hostile ones.

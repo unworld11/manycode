@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ccshare - join session</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='bold' fill='%2386c48e' text-anchor='middle'%3E%24%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0b0d10; color: #e8e4dc;
+    font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+  #bar { display: flex; align-items: center; gap: 14px; padding: 8px 14px;
+    background: #11151a; border-bottom: 1px solid #232a33; font-size: 12.5px; }
+  #bar .brand { font-weight: 700; }
+  #bar .code { color: #d97757; font-weight: 700; letter-spacing: 0.12em; }
+  #bar .status { color: #8a94a0; }
+  #bar .status.live { color: #86c48e; }
+  #bar .hint { margin-left: auto; color: #5c6570; }
+  #wrap { position: absolute; inset: 37px 0 0 0; padding: 6px; box-sizing: border-box; }
+  #term, .xterm, .xterm .xterm-viewport { height: 100%; background: #0b0d10; }
+  #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(11,13,16,0.92); z-index: 10; }
+  #card { background: #11151a; border: 1px solid #232a33; border-radius: 8px; padding: 28px 32px; width: 320px; }
+  #card h1 { font-size: 15px; margin: 0 0 4px 0; }
+  #card h1 span { color: #86c48e; }
+  #card p { color: #8a94a0; font-size: 12.5px; margin: 0 0 20px 0; }
+  #card label { display: block; color: #8a94a0; font-size: 11.5px; margin: 14px 0 4px 0; }
+  #card input { width: 100%; box-sizing: border-box; background: #0b0d10; color: #e8e4dc;
+    border: 1px solid #232a33; border-radius: 5px; padding: 9px 11px; font: inherit; }
+  #card input:focus { outline: none; border-color: #d97757; }
+  #card input#code { text-transform: uppercase; letter-spacing: 0.18em; font-weight: 700; }
+  #card button { width: 100%; margin-top: 20px; background: #d97757; color: #0b0d10; border: none;
+    border-radius: 5px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+  #card button:hover { filter: brightness(1.08); }
+  #msg { margin-top: 14px; font-size: 12.5px; color: #e8c170; min-height: 18px; }
+  #msg.err { color: #e07a6d; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <span class="brand">ccshare</span>
+  <span class="code" id="barcode"></span>
+  <span class="status" id="barstatus">not connected</span>
+  <span class="hint" id="barhint"></span>
+</div>
+<div id="wrap"><div id="term"></div></div>
+<div id="overlay">
+  <div id="card">
+    <h1>join a <span>ccshare</span> session</h1>
+    <p>live terminal, right in this tab - nothing to install.</p>
+    <label for="code">session code</label>
+    <input id="code" autocomplete="off" spellcheck="false" placeholder="7KQ2FM" />
+    <label for="name">your name</label>
+    <input id="name" autocomplete="off" spellcheck="false" placeholder="how the host sees you" />
+    <button id="go">join</button>
+    <div id="msg"></div>
+  </div>
+</div>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var term = new Terminal({
+    fontFamily: "'IBM Plex Mono', ui-monospace, Menlo, monospace",
+    fontSize: 13,
+    theme: { background: '#0b0d10', foreground: '#e8e4dc', cursor: '#d97757',
+      selectionBackground: '#d9775766' },
+    scrollback: 5000,
+  });
+  var fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open($('term'));
+  fit.fit();
+
+  var normalize = function (s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
+  var hashCode = normalize(location.hash.slice(1));
+  $('code').value = hashCode;
+  $('name').value = localStorage.getItem('ccshare-name') || '';
+  ($('code').value ? $('name') : $('code')).focus();
+
+  var ws = null, replayed = false, pending = [], readOnly = false, joined = false;
+
+  function status(text, live) {
+    $('barstatus').textContent = text;
+    $('barstatus').className = 'status' + (live ? ' live' : '');
+  }
+  function msg(text, isErr) {
+    $('msg').textContent = text;
+    $('msg').className = isErr ? 'err' : '';
+  }
+  function writeBytes(data) { term.write(new Uint8Array(data)); }
+  function b64bytes(s) {
+    var bin = atob(s), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function connect() {
+    var code = normalize($('code').value);
+    var name = $('name').value.trim() || 'browser-friend';
+    if (code.length < 4) return msg('that code looks too short', true);
+    localStorage.setItem('ccshare-name', name);
+    msg('connecting…');
+    $('barcode').textContent = code.slice(0, 3) + ' ' + code.slice(3);
+
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+    ws.binaryType = 'arraybuffer';
+    replayed = false; pending = []; joined = false;
+
+    ws.onopen = function () {
+      fit.fit();
+      ws.send(JSON.stringify({ t: 'join', code: code, name: name, cols: term.cols, rows: term.rows }));
+    };
+    ws.onmessage = function (ev) {
+      if (typeof ev.data !== 'string') {
+        if (!replayed) pending.push(ev.data);
+        else writeBytes(ev.data);
+        return;
+      }
+      var m; try { m = JSON.parse(ev.data); } catch { return; }
+      if (!m) return;
+      if (m.t === 'hold') {
+        msg('waiting for the host to let you in…');
+      } else if (m.t === 'ok') {
+        joined = true;
+        readOnly = !!m.readOnly;
+        $('overlay').style.display = 'none';
+        status('connected as ' + name + (readOnly ? ' · view only' : ''), true);
+        $('barhint').textContent = readOnly ? 'watching' : 'you can type';
+        term.focus();
+        // if the replay never lands (empty buffer), don't hold frames forever
+        setTimeout(function () {
+          if (!replayed) { replayed = true; pending.forEach(writeBytes); pending = []; }
+        }, 3000);
+      } else if (m.t === 'replay') {
+        term.reset();
+        if (m.d) writeBytes(b64bytes(m.d).buffer);
+        pending.forEach(writeBytes);
+        pending = [];
+        replayed = true;
+        if (m.readOnly) readOnly = true;
+      } else if (m.t === 'err') {
+        msg(m.msg || 'rejected', true);
+        status('not connected');
+        $('overlay').style.display = 'flex';
+      } else if (m.t === 'exit') {
+        status('host ended the session');
+        $('barhint').textContent = '';
+        term.write('\r\n\x1b[38;2;138;148;160m── the host ended the session ──\x1b[0m\r\n');
+      }
+    };
+    ws.onclose = function () {
+      if (joined) {
+        status('disconnected - reload to rejoin');
+        term.write('\r\n\x1b[38;2;138;148;160m── disconnected ──\x1b[0m\r\n');
+      } else if (!$('msg').textContent || $('msg').textContent === 'connecting…') {
+        msg('could not connect - is the session still running?', true);
+      }
+    };
+    ws.onerror = function () {};
+  }
+
+  term.onData(function (d) {
+    if (ws && ws.readyState === 1 && joined && !readOnly) ws.send(new TextEncoder().encode(d));
+  });
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      fit.fit();
+      if (ws && ws.readyState === 1 && joined) {
+        ws.send(JSON.stringify({ t: 'resize', cols: term.cols, rows: term.rows }));
+      }
+    }, 150);
+  });
+
+  $('go').addEventListener('click', connect);
+  [$('code'), $('name')].forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') connect(); });
+  });
+})();
+</script>
+</body>
+</html>

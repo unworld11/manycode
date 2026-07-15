@@ -12,6 +12,11 @@ const HELP = `ccshare - multiplayer claude code
       --code <code>    pick your own code instead of a random one
       --read-only      joiners can watch but not type
       --max <n>        max simultaneous joiners (default 5)
+      --approve        each joiner waits until you allow them in a dialog
+                       (macOS; ccshare setup can make it the default)
+      --no-approve     let joiners straight in for this session
+      --record         save the session as an asciinema .cast file
+                       (play it back later with asciinema or asciinema.org)
       --tunnel         wait for the cloudflare tunnel at startup so the
                        banner shows the remote join link
       --no-tunnel      don't open a tunnel. tunnels are on by default
@@ -26,6 +31,8 @@ const HELP = `ccshare - multiplayer claude code
       --relay <url>       fall back to this relay (or set CCSHARE_RELAY)
       --name <name>       how you show up on the host
       Ctrl-] detaches without stopping their session.
+      no terminal handy? the host's banner also shows a browser link -
+      open it and you're in the session from any browser, no install.
 
   ccshare relay [--port <n>]
       run a relay server so friends outside your network can join.
@@ -134,6 +141,9 @@ if (cmd === 'host') {
     '--tunnel': 'tunnel',
     '--no-tunnel': 'noTunnel',
     '--no-menubar': 'noMenubar',
+    '--approve': 'approve',
+    '--no-approve': 'noApprove',
+    '--record': 'record',
   });
   const relay = o.noRelay ? null : (o.relay || process.env.CCSHARE_RELAY || null);
   for (const [flag, key] of [['--port', 'port'], ['--max', 'max']]) {
@@ -156,6 +166,8 @@ if (cmd === 'host') {
       tunnel: !!o.tunnel,
       noTunnel: !!o.noTunnel || cfg.tunnel === false,
       noMenubar: !!o.noMenubar || cfg.menubar === false,
+      approve: o.noApprove ? false : (!!o.approve || cfg.approve === true),
+      record: !!o.record,
       claudeArgs: cmdline ? cmdline.slice(1).concat(o.rest || []) : (o.rest || []),
     });
   })().catch((e) => die('ccshare: ' + e.message));
@@ -186,6 +198,7 @@ if (cmd === 'host') {
       const who = s.names && s.names.length ? ` (${s.names.join(', ')})` : '';
       console.log(`${s.code}  ${dir}  ${s.joiners || 0} connected${who}  port ${s.port}`);
       if (s.tunnel) console.log(`        anywhere: ccshare join ${s.code} --host ${s.tunnel}`);
+      if (s.browser) console.log(`        browser:  ${s.browser}`);
     }
   }
 } else if (cmd === 'tunnel') {

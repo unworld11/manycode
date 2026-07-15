@@ -1,7 +1,10 @@
 'use strict';
 // Edge-case regressions: input validation and code normalization.
 const { spawn } = require('child_process');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const http = require('http');
 const WebSocket = require('ws');
 
 const BIN = path.join(__dirname, '..', 'bin', 'ccshare.js');
@@ -13,12 +16,30 @@ function check(name, ok, detail) {
   else { failures++; console.log('FAIL ' + name + (detail ? ': ' + detail : '')); }
 }
 
-function run(args) {
-  const p = spawn('node', [BIN, ...args], { stdio: 'pipe' });
+function run(args, opts = {}) {
+  const p = spawn('node', [BIN, ...args], { stdio: 'pipe', ...opts });
   let out = '';
   p.stdout.on('data', (d) => { out += d; });
   p.stderr.on('data', (d) => { out += d; });
   return { p, out: () => out };
+}
+
+// join and report the sequence of control messages ('hold', 'ok', 'err:…')
+function joinTrace(port, code, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+    const seen = [];
+    const done = () => { try { ws.close(); } catch {} resolve(seen); };
+    ws.on('open', () => ws.send(JSON.stringify({ t: 'join', code, name: 'edge', cols: 80, rows: 24 })));
+    ws.on('message', (d, bin) => {
+      if (bin) return;
+      const m = JSON.parse(d);
+      seen.push(m.t === 'err' ? 'err:' + m.msg : m.t);
+      if (m.t === 'ok' || m.t === 'err') done();
+    });
+    ws.on('error', () => done());
+    setTimeout(done, timeoutMs);
+  });
 }
 
 (async () => {
@@ -74,6 +95,51 @@ function run(args) {
   });
   check('stop <code> ends the host', stopped, stopper.out().trim().slice(0, 60));
   if (!stopped) h2.p.kill('SIGKILL');
+
+  // plain GET on the ws port serves the browser join page
+  const h3 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45977', '--code', 'WEBB42', 'bash', '-c', 'sleep 10']);
+  await wait(1200);
+  const page = await new Promise((resolve) => {
+    http.get('http://127.0.0.1:45977/', (res) => {
+      let body = '';
+      res.on('data', (d) => { body += d; });
+      res.on('end', () => resolve({ status: res.statusCode, body }));
+    }).on('error', () => resolve({ status: 0, body: '' }));
+  });
+  check('browser join page served', page.status === 200 && page.body.includes('xterm') && page.body.includes('ccshare'),
+    `status ${page.status}`);
+  h3.p.kill('SIGKILL');
+
+  // --approve: joiner is held, then let in / declined per the host's answer
+  const env = (v) => ({ env: { ...process.env, CCSHARE_APPROVE_TEST: v } });
+  const h4 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45976', '--code', 'APPR42', '--approve', 'bash', '-c', 'sleep 15'], env('allow'));
+  await wait(1200);
+  const allowed = await joinTrace(45976, 'APPR42');
+  check('approve: allowed joiner held then admitted', allowed.join(',') === 'hold,ok', allowed.join(','));
+  h4.p.kill('SIGKILL');
+
+  const h5 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45975', '--code', 'DENY42', '--approve', 'bash', '-c', 'sleep 15'], env('deny'));
+  await wait(1200);
+  const denied = await joinTrace(45975, 'DENY42');
+  check('approve: denied joiner told so', denied.join(',') === 'hold,err:the host declined', denied.join(','));
+  h5.p.kill('SIGKILL');
+
+  // --record: cast file with a v2 header and the session output, saved on SIGTERM
+  const recDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ccshare-rec-'));
+  const h6 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45974', '--code', 'RECC42', '--record', 'bash', '-c', 'echo MARKER_CAST; sleep 15'], { cwd: recDir });
+  await wait(2000);
+  h6.p.kill('SIGTERM');
+  await wait(600);
+  const casts = fs.readdirSync(recDir).filter((f) => f.endsWith('.cast'));
+  let castOk = false, castDetail = 'no .cast file';
+  if (casts.length === 1) {
+    const cast = fs.readFileSync(path.join(recDir, casts[0]), 'utf8').split('\n').filter(Boolean);
+    const head = JSON.parse(cast[0]);
+    castOk = head.version === 2 && head.width > 0 && cast.slice(1).some((l) => l.includes('MARKER_CAST'));
+    castDetail = `header ${JSON.stringify(head).slice(0, 60)}, ${cast.length} lines`;
+  }
+  check('record: asciinema cast written', castOk, castDetail);
+  fs.rmSync(recDir, { recursive: true, force: true });
 
   process.exit(failures ? 1 : 0);
 })();

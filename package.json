@@ -1,6 +1,6 @@
 {
   "name": "ccshare",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multiplayer Claude Code - share your live session with a code, like AirDrop",
   "license": "MIT",
   "bin": {
