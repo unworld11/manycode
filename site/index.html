@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ccshare - multiplayer claude code</title>
-    <meta name="description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Your friend joins from their terminal, sees your exact screen, and both of you can type." />
+    <meta name="description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Your friend joins from their terminal - or just opens a link in their browser - sees your exact screen, and both of you can type." />
     <meta property="og:title" content="ccshare - multiplayer claude code" />
-    <meta property="og:description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Open source, no accounts, no telemetry." />
+    <meta property="og:description" content="Share your live Claude Code session with a 6-char code, AirDrop-style. Friends can join from any browser, nothing to install. Open source, no accounts, no telemetry." />
     <meta property="og:type" content="website" />
     <meta name="theme-color" content="#0b0d10" />
     <script>
@@ -102,7 +102,7 @@
 
     <header class="hero col-narrow">
       <h1 class="h1"><span class="h1line">multiplayer</span><span class="h1line">claude code<span class="orange">.</span></span></h1>
-      <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal, sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a free tunnel.</p>
+      <p class="lede">share your live Claude Code session with a 6-char code, AirDrop-style. your friend joins from their terminal - or just <b>opens a link in their browser</b>, nothing to install - sees your exact screen, and <b>both of you can type</b>. works over your wifi with zero setup, or anywhere through a free tunnel.</p>
       <div class="install">
         <span class="install-prompt">$</span>
         <span class="install-scroll" id="install-cmd">curl -fsSL https://getccshare.vercel.app/install.sh | sh</span>
@@ -126,7 +126,8 @@
             <div class="tline reveal" style="animation-delay:2.3s">&nbsp;</div>
             <div class="tline reveal dim" style="animation-delay:2.5s">  same wifi:   ccshare join 7KQ2FM</div>
             <div class="tline reveal dim" style="animation-delay:2.7s">  direct:      ccshare join 7KQ2FM --host 192.168.1.4:42518</div>
-            <div class="tline reveal" style="animation-delay:2.9s">&nbsp;</div>
+            <div class="tline reveal dim" style="animation-delay:2.9s">  browser:     https://ideal-times-sing.trycloudflare.com/#7KQ2FM</div>
+            <div class="tline reveal" style="animation-delay:3.1s">&nbsp;</div>
             <div class="tline reveal green" style="animation-delay:6.4s">  * friend connected</div>
           </div>
         </div>
@@ -163,7 +164,7 @@
         <div class="step">
           <div class="step-num">03</div>
           <div class="step-name">join</div>
-          <div class="step-body"><code>ccshare join 7KQ2FM</code> attaches read-write. their keystrokes land in your session. <code>Ctrl-]</code> detaches without killing it.</div>
+          <div class="step-body"><code>ccshare join 7KQ2FM</code> attaches read-write. no terminal handy? they open the browser link instead - same live session, from any device. <code>Ctrl-]</code> detaches without killing it.</div>
         </div>
       </div>
     </section>
@@ -175,7 +176,10 @@
       <ul class="featlist">
         <li class="feat"><span class="feat-name">smallest terminal wins</span><span class="feat-desc">the pty resizes to the smallest connected terminal, tmux-style, so everyone sees the same frame. joiners get 256KB of scrollback replayed plus a forced repaint.</span></li>
         <li class="feat"><span class="feat-name">tunnel anywhere</span><span class="feat-desc">hosting opens a free cloudflare quick tunnel by default. cloudflared comes bundled, no account needed. friends on any network join through a random wss:// url that dies with your session. <code>--no-tunnel</code> keeps it lan-only.</span></li>
-        <li class="feat"><span class="feat-name">menu bar code</span><span class="feat-desc">on macos, hosting puts your live code in the menu bar: click to copy the join command, see who's connected, get a ping when a friend joins. the icon turns into a globe when the anywhere link is ready.</span></li>
+        <li class="feat"><span class="feat-name">join from a browser</span><span class="feat-desc">every session has a link like <code>https://&hellip;.trycloudflare.com/#7KQ2FM</code> that opens a full live terminal in any browser - phone included. nothing to install, code prefilled, same screen and typing as the cli.</span></li>
+        <li class="feat"><span class="feat-name">approve each joiner</span><span class="feat-desc"><code>ccshare host --approve</code> holds every joiner - right code and all - until you click allow in a macos dialog. make it your default with <code>ccshare setup</code>.</span></li>
+        <li class="feat"><span class="feat-name">record the session</span><span class="feat-desc"><code>ccshare host --record</code> saves an asciinema .cast of everything everyone saw. replay it with <code>asciinema play</code> or upload it to asciinema.org.</span></li>
+        <li class="feat"><span class="feat-name">menu bar code</span><span class="feat-desc">on macos, hosting puts your live code and joiner count in the menu bar: copy join commands or the browser link, open the anywhere-tunnel, end the session, get a ping when friends come and go. the icon turns into a globe when the anywhere link is ready.</span></li>
         <li class="feat"><span class="feat-name">relay, if you'd rather self-host</span><span class="feat-desc">run <code>ccshare relay</code> on any box you own. it is a dumb pipe that pairs rooms by code and forwards frames. set <code>CCSHARE_RELAY</code> once and host/join fall back to it automatically.</span></li>
         <li class="feat"><span class="feat-name">direct over tailscale</span><span class="feat-desc"><code>ccshare join CODE --host 100.x.y.z:42518</code> connects straight through. no relay, no extra server.</span></li>
         <li class="feat"><span class="feat-name">read-only mode</span><span class="feat-desc"><code>ccshare host --read-only</code> lets friends watch a session without touching it. good for demos and rubber-ducking.</span></li>
@@ -198,7 +202,7 @@
     <div class="col-wide">
       <footer class="footer">
         <span><span class="green">$</span> ccshare &middot; MIT license</span>
-        <span>~700 lines of node &middot; built on <a href="https://github.com/microsoft/node-pty">node-pty</a> + <a href="https://github.com/websockets/ws">ws</a> &middot; <a href="https://github.com/unworld11/ccshare">github.com/unworld11/ccshare</a></span>
+        <span>~2k lines of node &middot; built on <a href="https://github.com/microsoft/node-pty">node-pty</a> + <a href="https://github.com/websockets/ws">ws</a> + <a href="https://github.com/xtermjs/xterm.js">xterm.js</a> &middot; <a href="https://github.com/unworld11/ccshare">github.com/unworld11/ccshare</a></span>
       </footer>
     </div>
 
