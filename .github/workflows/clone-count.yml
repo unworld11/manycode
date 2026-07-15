@@ -1,0 +1,34 @@
+# Snapshots GitHub's clone traffic (14-day rolling window) into the 'traffic'
+# branch daily, accumulating an all-time install count for the README badge.
+# Needs the CLONE_TRAFFIC_TOKEN secret: a fine-grained PAT for this repo with
+# Administration: read (the traffic API isn't readable by GITHUB_TOKEN).
+name: clone counter
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: traffic
+      - name: snapshot and merge clone traffic
+        env:
+          TOKEN: ${{ secrets.CLONE_TRAFFIC_TOKEN }}
+        run: |
+          curl -fsS -H "Authorization: Bearer $TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/traffic/clones" > /tmp/clones.json
+          node merge.js /tmp/clones.json
+      - name: push
+        run: |
+          git config user.name "clone-counter"
+          git config user.email "actions@users.noreply.github.com"
+          git add stats.json badge.json
+          git diff --cached --quiet || git commit -m "traffic: $(date -u +%F)"
+          git push origin traffic

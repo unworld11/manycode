@@ -2,6 +2,7 @@
 
 **[getccshare.vercel.app](https://getccshare.vercel.app)**
 
+[![installs](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Funworld11%2Fccshare%2Ftraffic%2Fbadge.json&style=flat)](https://getccshare.vercel.app)
 [![GitHub stars](https://img.shields.io/github/stars/unworld11/ccshare?style=flat&color=d97757&label=stars)](https://github.com/unworld11/ccshare/stargazers)
 [![latest release](https://img.shields.io/github/v/release/unworld11/ccshare?style=flat&color=86c48e&label=release)](https://github.com/unworld11/ccshare/releases)
 [![license](https://img.shields.io/github/license/unworld11/ccshare?style=flat&color=8a94a0)](LICENSE)
