@@ -97,8 +97,41 @@ async function testRelay() {
   }
 }
 
+// A joiner that stops reading must get dropped, not buffered forever in host
+// memory. Force the threshold low, stall the joiner's socket, make the session
+// flood output, and watch for the host's drop notice. (The joiner's own close
+// event is no use here - a paused socket doesn't read, so it never sees the
+// termination until it resumes.)
+async function testBackpressure() {
+  const host = spawn('node', [
+    BIN, 'host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45996', '--code', 'BACK42',
+    '--cmd', 'bash', '--', '-c', 'echo READY; while IFS= read -r line; do eval "$line"; done',
+  ], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, CCSHARE_MAX_BUFFERED: '65536' } });
+  let hostErr = '';
+  host.stderr.on('data', (d) => { hostErr += d; });
+  host.stdout.on('data', () => {});
+  try {
+    await wait(1200);
+    const ws = await joinWs('ws://127.0.0.1:45996', 'BACK42', 'slowpoke');
+    // ask the session to flood, then stop reading so our socket backs up
+    ws.send(Buffer.from('yes CCSHAREFLOOD | head -n 2000000\n'));
+    ws._socket.pause();
+    const t0 = Date.now();
+    while (!hostErr.includes('too far behind') && Date.now() - t0 < 8000) await wait(200);
+    ws._socket.resume();
+    if (!hostErr.includes('too far behind')) throw new Error('host never dropped the stalled joiner');
+    console.log('PASS backpressure: stalled joiner dropped instead of buffering unbounded');
+  } catch (e) {
+    failures++;
+    console.log('FAIL backpressure: ' + e.message);
+  } finally {
+    host.kill('SIGKILL');
+  }
+}
+
 (async () => {
   await testDirect();
   await testRelay();
+  await testBackpressure();
   process.exit(failures ? 1 : 0);
 })();

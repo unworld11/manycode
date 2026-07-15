@@ -40,6 +40,11 @@ const HELP = `ccshare - multiplayer claude code
       for when you started lan-only and now want to invite someone
       remote. prints the join command when the tunnel is up.
 
+  ccshare stop [code]
+      end a running host session from another terminal (sends it a
+      clean shutdown). with no code, stops the only session; if several
+      are running, names them so you can pick one.
+
   ccshare menubar
       start the macOS menu bar helper by hand. it stays until you quit it
       from the menu. hosting starts it automatically.
@@ -52,6 +57,9 @@ const HELP = `ccshare - multiplayer claude code
   ccshare update
       pull the latest ccshare from github and reinstall deps. host and
       join tell you when you're behind.
+
+  ccshare version
+      print the installed version and commit.
 
 examples
   you:            cd my-project && ccshare host
@@ -208,6 +216,34 @@ if (cmd === 'host') {
     if (!cur) { clearInterval(poll); die('ccshare: that session ended'); }
     if (Date.now() - t0 > 90000) { clearInterval(poll); die('ccshare: tunnel did not come up in 90s - check the host terminal'); }
   }, 1500);
+} else if (cmd === 'stop') {
+  const path = require('path');
+  const { normalizeCode } = require('../lib/codes');
+  const sessions = require('../lib/state').list();
+  const wanted = normalizeCode(argv[0]);
+  const matches = wanted ? sessions.filter((s) => s.code === wanted) : sessions;
+  if (!matches.length) die(wanted ? `ccshare: no active session with code ${wanted}` : 'ccshare: no active sessions');
+  if (matches.length > 1) die('ccshare: several sessions running - pick one: ccshare stop <code>\n' + matches.map((s) => `  ${s.code}  ${path.basename(s.cwd || '')}`).join('\n'));
+  const s = matches[0];
+  // A dead host that was SIGKILLed leaves its state file behind; if the OS has
+  // since recycled its pid, that pid now owns an unrelated process. state.list()
+  // only proves the pid is alive, so confirm it's actually ccshare before we
+  // signal it - otherwise `stop` could kill a stranger.
+  const ps = require('child_process').spawnSync('ps', ['-p', String(s.pid), '-o', 'command='], { encoding: 'utf8' });
+  if (ps.status === 0 && ps.stdout && !/ccshare/.test(ps.stdout)) {
+    die(`ccshare: pid ${s.pid} for ${s.code} isn't a ccshare process anymore - clearing that stale entry`);
+  }
+  try { process.kill(s.pid, 'SIGTERM'); } catch (e) { die(`ccshare: could not stop ${s.code} (${e.message})`); }
+  console.log(`ccshare: stopped ${s.code}`);
+} else if (cmd === 'version' || cmd === '--version' || cmd === '-v') {
+  const pkg = require('../package.json');
+  let commit = '';
+  try {
+    commit = ' (' + require('child_process')
+      .execFileSync('git', ['-C', require('path').join(__dirname, '..'), 'rev-parse', '--short', 'HEAD'],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() + ')';
+  } catch {}
+  console.log(`ccshare ${pkg.version}${commit}`);
 } else if (cmd === 'setup') {
   require('../lib/setup').run().then(() => process.exit(0)).catch(() => process.exit(1));
 } else if (cmd === 'update') {

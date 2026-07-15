@@ -54,5 +54,26 @@ function run(args) {
   check('missing agent explained', p3.out().includes('not found - is it installed'), p3.out().trim().slice(0, 90));
   p3.p.kill('SIGKILL');
 
+  // version prints the package version
+  const p4 = run(['version']);
+  await wait(500);
+  check('version prints a number', /ccshare \d+\.\d+\.\d+/.test(p4.out()), p4.out().trim().slice(0, 60));
+
+  // stop with no sessions is a clean message, not a crash
+  const p5 = run(['stop']);
+  await wait(500);
+  check('stop with no sessions is clean', p5.out().includes('no active sessions'), p5.out().trim().slice(0, 60));
+
+  // stop <code> ends a running host from another process
+  const h2 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45978', '--code', 'STOPME', 'bash', '-c', 'sleep 30']);
+  await wait(1200);
+  const stopper = run(['stop', 'STOPME']);
+  const stopped = await new Promise((resolve) => {
+    h2.p.on('exit', () => resolve(true));
+    setTimeout(() => resolve(false), 3000);
+  });
+  check('stop <code> ends the host', stopped, stopper.out().trim().slice(0, 60));
+  if (!stopped) h2.p.kill('SIGKILL');
+
   process.exit(failures ? 1 : 0);
 })();

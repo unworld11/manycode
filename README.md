@@ -93,7 +93,8 @@ code back:
   when your sessions end. `ccshare host --no-menubar` opts out; `ccshare menubar`
   starts it by hand and keeps it running.
 - **`ccshare code`** - prints the code, project, and joiner list for every active
-  session, on any platform.
+  session, on any platform. `ccshare stop [code]` ends a session from any terminal
+  without switching back to the one hosting it.
 
 ## Group sessions and late invites
 
