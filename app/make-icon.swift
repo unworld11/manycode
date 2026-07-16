@@ -18,13 +18,17 @@ func render(_ px: Int) -> Data? {
     NSColor(red: 0x0B / 255, green: 0x0D / 255, blue: 0x10 / 255, alpha: 1).setFill()
     path.fill()
 
-    let font = NSFont.monospacedSystemFont(ofSize: size * 0.60, weight: .bold)
-    let glyph = NSAttributedString(string: "$", attributes: [
-        .font: font,
-        .foregroundColor: NSColor(red: 0x5E / 255, green: 0xE3 / 255, blue: 0x8A / 255, alpha: 1),
-    ])
-    let gs = glyph.size()
-    glyph.draw(at: NSPoint(x: (size - gs.width) / 2, y: (size - gs.height) / 2 + size * 0.01))
+    // three stacked terminal cursors (many people, one live terminal)
+    func col(_ hex: UInt32) -> NSColor {
+        NSColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255, blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+    let bw = size * 0.145, bh = size * 0.42, off = size * 0.11, r = size * 0.035
+    let total = bw + off * 2
+    let x0 = (size - total) / 2, y0 = (size - bh) / 2
+    for (k, hex) in [0x2F7D52, 0x43A86B, 0x5EE38A].enumerated() {
+        col(UInt32(hex)).setFill()
+        NSBezierPath(roundedRect: NSRect(x: x0 + CGFloat(k) * off, y: y0, width: bw, height: bh), xRadius: r, yRadius: r).fill()
+    }
 
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])

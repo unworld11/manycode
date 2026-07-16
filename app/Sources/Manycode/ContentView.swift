@@ -49,10 +49,13 @@ struct Sidebar: View {
         VStack(alignment: .leading, spacing: 0) {
             // leave room for the real macOS window controls (hidden titlebar)
             Spacer().frame(height: 26)
-            Text("$ manycode")
-                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                .foregroundColor(.mcGreen)
-                .padding(.leading, 8).padding(.bottom, 20)
+            HStack(spacing: 8) {
+                LogoMark(height: 16)
+                Text("manycode")
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.mcText)
+            }
+            .padding(.leading, 8).padding(.bottom, 20)
 
             VStack(spacing: 2) {
                 ForEach(Section.allCases) { s in

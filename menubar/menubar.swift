@@ -36,7 +36,7 @@ struct SessionState: Codable {
     let recording: String?
 }
 
-let accent = NSColor(calibratedRed: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x57 / 255.0, alpha: 1)
+let accent = NSColor(calibratedRed: 0x5E / 255.0, green: 0xE3 / 255.0, blue: 0x8A / 255.0, alpha: 1)
 
 func spaced(_ code: String) -> String {
     // 7KQ2FM -> 7KQ 2FM, matching the terminal banner

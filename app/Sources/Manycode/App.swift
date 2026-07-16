@@ -79,4 +79,22 @@ func avatarLetter(_ n: String) -> String {
     String(n.trimmingCharacters(in: .whitespaces).first ?? "?").uppercased()
 }
 
+// the logo: three stacked terminal cursors (many people, one live terminal)
+struct LogoMark: View {
+    var height: CGFloat = 16
+    private let shades: [Color] = [Color(hex: 0x2F7D52), Color(hex: 0x43A86B), Color(hex: 0x5EE38A)]
+    var body: some View {
+        let bw = height * 0.345, off = height * 0.262
+        ZStack(alignment: .leading) {
+            ForEach(0..<3, id: \.self) { i in
+                RoundedRectangle(cornerRadius: height * 0.09)
+                    .fill(shades[i])
+                    .frame(width: bw, height: height)
+                    .offset(x: CGFloat(i) * off)
+            }
+        }
+        .frame(width: bw + off * 2, height: height, alignment: .leading)
+    }
+}
+
 let mcMono = Font.system(size: 13, design: .monospaced)

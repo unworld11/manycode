@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>manycode - join session</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='bold' fill='%2386c48e' text-anchor='middle'%3E%24%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Crect x='7.5' y='8.5' width='7' height='15' rx='1.6' fill='%232f7d52'/%3E%3Crect x='12.5' y='8.5' width='7' height='15' rx='1.6' fill='%2343a86b'/%3E%3Crect x='17.5' y='8.5' width='7' height='15' rx='1.6' fill='%235ee38a'/%3E%3C/svg%3E" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
@@ -15,9 +15,9 @@
   #bar { display: flex; align-items: center; gap: 14px; padding: 8px 14px;
     background: #11151a; border-bottom: 1px solid #232a33; font-size: 12.5px; }
   #bar .brand { font-weight: 700; }
-  #bar .code { color: #d97757; font-weight: 700; letter-spacing: 0.12em; }
+  #bar .code { color: #5ee38a; font-weight: 700; letter-spacing: 0.12em; }
   #bar .status { color: #8a94a0; }
-  #bar .status.live { color: #86c48e; }
+  #bar .status.live { color: #5ee38a; }
   #bar .hint { margin-left: auto; color: #5c6570; }
   #wrap { position: absolute; inset: 37px 0 0 0; padding: 6px; box-sizing: border-box; }
   body.chat-open #wrap { right: 280px; }
@@ -30,24 +30,24 @@
   #msgs .host-tag { color: #8a94a0; font-size: 10.5px; }
   #chatin { margin: 10px; padding: 8px 10px; background: #0b0d10; border: 1px solid #232a33;
     border-radius: 5px; color: #e8e4dc; font: inherit; font-size: 12.5px; }
-  #chatin:focus { outline: none; border-color: #d97757; }
+  #chatin:focus { outline: none; border-color: #5ee38a; }
   #chatbtn { background: none; border: 1px solid #232a33; border-radius: 4px; color: #8a94a0;
     font: inherit; font-size: 11.5px; padding: 2px 10px; cursor: pointer; }
-  #chatbtn:hover { border-color: #d97757; color: #d97757; }
-  #chatbtn .n { color: #d97757; font-weight: 700; }
+  #chatbtn:hover { border-color: #5ee38a; color: #5ee38a; }
+  #chatbtn .n { color: #5ee38a; font-weight: 700; }
   #term, .xterm, .xterm .xterm-viewport { height: 100%; background: #0b0d10; }
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(11,13,16,0.92); z-index: 10; }
   #card { background: #11151a; border: 1px solid #232a33; border-radius: 8px; padding: 28px 32px; width: 320px; }
   #card h1 { font-size: 15px; margin: 0 0 4px 0; }
-  #card h1 span { color: #86c48e; }
+  #card h1 span { color: #5ee38a; }
   #card p { color: #8a94a0; font-size: 12.5px; margin: 0 0 20px 0; }
   #card label { display: block; color: #8a94a0; font-size: 11.5px; margin: 14px 0 4px 0; }
   #card input { width: 100%; box-sizing: border-box; background: #0b0d10; color: #e8e4dc;
     border: 1px solid #232a33; border-radius: 5px; padding: 9px 11px; font: inherit; }
-  #card input:focus { outline: none; border-color: #d97757; }
+  #card input:focus { outline: none; border-color: #5ee38a; }
   #card input#code { text-transform: uppercase; letter-spacing: 0.18em; font-weight: 700; }
-  #card button { width: 100%; margin-top: 20px; background: #d97757; color: #0b0d10; border: none;
+  #card button { width: 100%; margin-top: 20px; background: #5ee38a; color: #0b0d10; border: none;
     border-radius: 5px; padding: 10px; font: inherit; font-weight: 700; cursor: pointer; }
   #card button:hover { filter: brightness(1.08); }
   #msg { margin-top: 14px; font-size: 12.5px; color: #e8c170; min-height: 18px; }
@@ -85,8 +85,8 @@
   var term = new Terminal({
     fontFamily: "'IBM Plex Mono', ui-monospace, Menlo, monospace",
     fontSize: 13,
-    theme: { background: '#0b0d10', foreground: '#e8e4dc', cursor: '#d97757',
-      selectionBackground: '#d9775766' },
+    theme: { background: '#0b0d10', foreground: '#e8e4dc', cursor: '#5ee38a',
+      selectionBackground: '#5ee38a66' },
     scrollback: 5000,
   });
   var fit = new FitAddon.FitAddon();
@@ -138,7 +138,7 @@
     d.className = 'm';
     var who = document.createElement('span');
     who.className = 'who';
-    who.style.color = mine ? '#86c48e' : nameColor(from);
+    who.style.color = mine ? '#5ee38a' : nameColor(from);
     who.textContent = mine ? 'you' : from;
     d.appendChild(who);
     if (isHost) {
