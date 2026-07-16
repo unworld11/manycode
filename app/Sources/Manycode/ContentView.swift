@@ -21,6 +21,11 @@ struct Shell: View {
             }
         }
         .foregroundColor(.mcText)
+        .onAppear {
+            // launched from Finder/terminal the window can open behind others
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     @ViewBuilder private var lobbyContent: some View {

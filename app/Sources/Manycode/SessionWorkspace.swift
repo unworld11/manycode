@@ -79,13 +79,11 @@ struct SessionWorkspace: View {
 
     private var rightRail: some View {
         VStack(spacing: 0) {
-            Picker("", selection: $rail) {
-                Text("People").tag(Rail.people)
-                Text(client.unread > 0 ? "Messages (\(client.unread))" : "Messages").tag(Rail.messages)
+            HStack(spacing: 6) {
+                railTab(title: "People", icon: "person.2", tag: .people, badge: 0)
+                railTab(title: "Messages", icon: "bubble.left", tag: .messages, badge: client.unread)
             }
-            .pickerStyle(.segmented).labelsHidden()
-            .padding(10)
-            .onChange(of: rail) { if $0 == .messages { client.unread = 0 } }
+            .padding(8)
 
             Divider().overlay(Color.mcBorder)
 
@@ -93,6 +91,31 @@ struct SessionWorkspace: View {
             else { ChatPane() }
         }
         .background(Color.mcSidebar)
+    }
+
+    private func railTab(title: String, icon: String, tag: Rail, badge: Int) -> some View {
+        let active = rail == tag
+        return Button {
+            rail = tag
+            if tag == .messages { client.unread = 0 }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.system(size: 11))
+                Text(title).font(.system(size: 12, weight: .semibold))
+                if badge > 0 {
+                    Text("\(badge)").font(.system(size: 10, weight: .bold)).foregroundColor(.mcDeep)
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(Color.mcGreen).clipShape(Capsule())
+                }
+            }
+            .foregroundColor(active ? .mcGreen : .mcDim(0.6))
+            .frame(maxWidth: .infinity).padding(.vertical, 7)
+            .background(active ? Color.mcGreenGlow : Color.white.opacity(0.03))
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(active ? Color.mcGreen.opacity(0.3) : .clear))
+            .cornerRadius(8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: status bar

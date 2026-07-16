@@ -11,9 +11,13 @@ struct ChatPane: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 10) {
                         if client.chat.isEmpty {
-                            Text("no messages yet — say hi without typing into the shared prompt")
-                                .font(.system(size: 11.5)).foregroundColor(.mcDim(0.4))
-                                .padding(.top, 16).padding(.horizontal, 4)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Image(systemName: "bubble.left.and.bubble.right").font(.system(size: 20)).foregroundColor(.mcGreen.opacity(0.6))
+                                Text("no messages yet").font(.system(size: 13, weight: .semibold)).foregroundColor(.mcDim(0.8))
+                                Text("say something to the room without typing into the shared prompt — type below and hit return.")
+                                    .font(.system(size: 11.5)).foregroundColor(.mcDim(0.55)).lineSpacing(2)
+                            }
+                            .padding(.top, 14).padding(.horizontal, 2)
                         }
                         ForEach(client.chat) { m in ChatBubble(m: m) }
                     }
@@ -67,9 +71,13 @@ struct ChatBubble: View {
     }
 }
 
-// Lobby "Messages" tab — chat only lives inside a session, so guide there.
+// Lobby "Messages" tab — chat only lives inside a session, so guide there
+// (and offer to hop straight into one that's already running here).
 struct MessagesLobby: View {
+    @EnvironmentObject var client: SessionClient
     @EnvironmentObject var app: AppState
+    @State private var sessions: [LocalSession] = []
+    private let tick = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
         VStack(spacing: 16) {
@@ -77,17 +85,44 @@ struct MessagesLobby: View {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 34)).foregroundColor(.mcGreen.opacity(0.7))
             Text("Messages live inside a session").font(.system(size: 15, weight: .semibold))
-            Text("join or host a session and the room chat opens alongside the terminal —\ntalk without typing over each other in the shared prompt.")
-                .font(.system(size: 12.5)).foregroundColor(.mcDim(0.55))
+            Text("chat opens alongside the terminal once you're in a session —\ntalk without typing over each other in the shared prompt.")
+                .font(.system(size: 12.5)).foregroundColor(.mcDim(0.6))
                 .multilineTextAlignment(.center).lineSpacing(3)
-            HStack(spacing: 10) {
-                lobbyBtn("Host a session", filled: true) { app.section = .host }
-                lobbyBtn("Join by code", filled: false) { app.section = .join }
+
+            if !sessions.isEmpty {
+                VStack(spacing: 8) {
+                    Text("OPEN ONE RUNNING HERE").font(.system(size: 10, weight: .semibold)).kerning(0.6).foregroundColor(.mcDim(0.45))
+                    ForEach(sessions) { s in
+                        Button { open(s) } label: {
+                            HStack(spacing: 10) {
+                                Text(s.spacedCode).font(.system(size: 14, weight: .bold, design: .monospaced)).foregroundColor(.mcGreen)
+                                Text(s.dirName).font(.system(size: 12)).foregroundColor(.mcDim(0.6))
+                                Image(systemName: "arrow.right").foregroundColor(.mcGreen)
+                            }
+                            .padding(.horizontal, 14).padding(.vertical, 9)
+                            .background(Color.mcPanel).overlay(RoundedRectangle(cornerRadius: 9).stroke(Color.mcBorder)).cornerRadius(9)
+                        }.buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 4)
+            } else {
+                HStack(spacing: 10) {
+                    lobbyBtn("Host a session", filled: true) { app.section = .host }
+                    lobbyBtn("Join by code", filled: false) { app.section = .join }
+                }
+                .padding(.top, 6)
             }
-            .padding(.top, 6)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { sessions = Discovery.localSessions() }
+        .onReceive(tick) { _ in sessions = Discovery.localSessions() }
+    }
+
+    private func open(_ s: LocalSession) {
+        app.hostedSession = s
+        guard let url = URL(string: "ws://127.0.0.1:\(s.port)") else { return }
+        client.connect(url: url, code: s.code, name: app.userName)
     }
 
     private func lobbyBtn(_ t: String, filled: Bool, tap: @escaping () -> Void) -> some View {
