@@ -4,6 +4,20 @@ manycode installs and updates straight from git (`manycode update` is a `git pul
 so what you actually run is `master` HEAD - these tags just mark the points worth
 naming.
 
+## 0.5.0
+
+- **Talk on the side.** Every session now has a chat channel that never touches
+  the shared prompt - coordinate who's driving without typing over each other.
+  Browser joiners get a sidebar with an unread badge, CLI joiners press `Ctrl-T`
+  to compose (Enter sends, Esc cancels), and the host chats from any terminal
+  with `manycode say "…"` plus macOS notifications for incoming messages. Late
+  joiners get recent chat replayed; sender names are stamped by the host.
+- **.env values don't leak by default.** Hosting a folder with `.env` files asks
+  what joiners should see. The default masks every value with `••••••` in the
+  live stream, the scrollback replay, and recordings - even when a secret is
+  split across output chunks - while the host's own screen stays raw.
+  `--share-secrets` opts into sharing, `--redact-secrets` skips the question.
+
 ## 0.4.0
 
 - **ccshare is now manycode.** Same tool, wider name - it was never only about

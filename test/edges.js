@@ -124,6 +124,66 @@ function joinTrace(port, code, timeoutMs = 5000) {
   check('approve: denied joiner told so', denied.join(',') === 'hold,err:the host declined', denied.join(','));
   h5.p.kill('SIGKILL');
 
+  // chat: A's message reaches B (not echoed to A), late joiner C gets the log
+  const h7 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45973', '--code', 'CHAT42', 'bash', '-c', 'sleep 20']);
+  await wait(1200);
+  const joinChat = (name) => new Promise((resolve, reject) => {
+    const ws = new WebSocket('ws://127.0.0.1:45973');
+    const got = { chats: [], logs: [] };
+    ws.on('open', () => ws.send(JSON.stringify({ t: 'join', code: 'CHAT42', name, cols: 80, rows: 24 })));
+    ws.on('message', (d, bin) => {
+      if (bin) return;
+      const m = JSON.parse(d);
+      if (m.t === 'ok') resolve({ ws, got });
+      if (m.t === 'chat') got.chats.push(m);
+      if (m.t === 'chatlog') got.logs.push(...m.msgs);
+    });
+    ws.on('error', reject);
+    setTimeout(() => reject(new Error('join timeout')), 4000);
+  });
+  const A = await joinChat('alice');
+  const B = await joinChat('bob');
+  A.ws.send(JSON.stringify({ t: 'chat', text: 'hello from alice' }));
+  await wait(700);
+  check('chat: B hears A with stamped name',
+    B.got.chats.length === 1 && B.got.chats[0].from === 'alice' && B.got.chats[0].text === 'hello from alice',
+    JSON.stringify(B.got.chats));
+  check('chat: A is not echoed her own message', A.got.chats.length === 0, JSON.stringify(A.got.chats));
+  const C = await joinChat('carol');
+  await wait(500);
+  check('chat: late joiner gets the log', C.got.logs.some((m) => m.text === 'hello from alice'), JSON.stringify(C.got.logs));
+  A.ws.close(); B.ws.close(); C.ws.close();
+  h7.p.kill('SIGKILL');
+
+  // secrets guard: .env values masked for joiners by default, raw with --share-secrets
+  const envDir = fs.mkdtempSync(path.join(os.tmpdir(), 'manycode-env-'));
+  fs.writeFileSync(path.join(envDir, '.env'), 'API_KEY=supersecretvalue123\nPORT=3000\n# comment\n');
+  for (const [label, flag, wantMasked] of [
+    ['masked by default', [], true],
+    ['raw with --share-secrets', ['--share-secrets'], false],
+  ]) {
+    const hp = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45972', '--code', 'SECR42', ...flag,
+      'bash', '-c', 'echo key is supersecretvalue123; sleep 10'], { cwd: envDir });
+    await wait(1500);
+    const seen = await new Promise((resolve) => {
+      const ws = new WebSocket('ws://127.0.0.1:45972');
+      let acc = '';
+      ws.on('open', () => ws.send(JSON.stringify({ t: 'join', code: 'SECR42', name: 'peek', cols: 80, rows: 24 })));
+      ws.on('message', (d, bin) => {
+        if (bin) { acc += d.toString('utf8'); return; }
+        const m = JSON.parse(d);
+        if (m.t === 'replay' && m.d) acc += Buffer.from(m.d, 'base64').toString('utf8');
+      });
+      setTimeout(() => { try { ws.close(); } catch {} resolve(acc); }, 2500);
+    });
+    const masked = !seen.includes('supersecretvalue123') && seen.includes('••••••');
+    check(`secrets: ${label}`, wantMasked ? masked : seen.includes('supersecretvalue123'),
+      `saw: ${JSON.stringify(seen.slice(0, 120))}`);
+    hp.p.kill('SIGKILL');
+    await wait(300);
+  }
+  fs.rmSync(envDir, { recursive: true, force: true });
+
   // --record: cast file with a v2 header and the session output, saved on SIGTERM
   const recDir = fs.mkdtempSync(path.join(os.tmpdir(), 'manycode-rec-'));
   const h6 = run(['host', '--no-relay', '--no-menubar', '--no-tunnel', '--port', '45974', '--code', 'RECC42', '--record', 'bash', '-c', 'echo MARKER_CAST; sleep 15'], { cwd: recDir });

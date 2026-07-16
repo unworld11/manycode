@@ -17,6 +17,8 @@ const HELP = `manycode - multiplayer claude code
       --no-approve     let joiners straight in for this session
       --record         save the session as an asciinema .cast file
                        (play it back later with asciinema or asciinema.org)
+      --share-secrets  don't mask .env values in what joiners see
+      --redact-secrets mask them without asking (the default is to ask)
       --tunnel         wait for the cloudflare tunnel at startup so the
                        banner shows the remote join link
       --no-tunnel      don't open a tunnel. tunnels are on by default
@@ -30,7 +32,8 @@ const HELP = `manycode - multiplayer claude code
       --host <ip[:port]>  connect straight to the host (tailscale, port-forward)
       --relay <url>       fall back to this relay (or set MANYCODE_RELAY)
       --name <name>       how you show up on the host
-      Ctrl-] detaches without stopping their session.
+      Ctrl-] detaches without stopping their session. Ctrl-T chats to
+      the room without typing into the shared prompt.
       no terminal handy? the host's banner also shows a browser link -
       open it and you're in the session from any browser, no install.
 
@@ -46,6 +49,10 @@ const HELP = `manycode - multiplayer claude code
       open the anywhere-tunnel on a session that's already running -
       for when you started lan-only and now want to invite someone
       remote. prints the join command when the tunnel is up.
+
+  manycode say <message>
+      send a chat message to your running session from any terminal
+      (several sessions? target one with --code <code>).
 
   manycode stop [code]
       end a running host session from another terminal (sends it a
@@ -144,6 +151,8 @@ if (cmd === 'host') {
     '--approve': 'approve',
     '--no-approve': 'noApprove',
     '--record': 'record',
+    '--share-secrets': 'shareSecrets',
+    '--redact-secrets': 'redactSecrets',
   });
   const relay = o.noRelay ? null : (o.relay || process.env.MANYCODE_RELAY || process.env.CCSHARE_RELAY || null);
   for (const [flag, key] of [['--port', 'port'], ['--max', 'max']]) {
@@ -168,6 +177,8 @@ if (cmd === 'host') {
       noMenubar: !!o.noMenubar || cfg.menubar === false,
       approve: o.noApprove ? false : (!!o.approve || cfg.approve === true),
       record: !!o.record,
+      shareSecrets: !!o.shareSecrets,
+      redactSecrets: !!o.redactSecrets,
       claudeArgs: cmdline ? cmdline.slice(1).concat(o.rest || []) : (o.rest || []),
     });
   })().catch((e) => die('manycode: ' + e.message));
@@ -230,6 +241,20 @@ if (cmd === 'host') {
     if (!cur) { clearInterval(poll); die('manycode: that session ended'); }
     if (Date.now() - t0 > 90000) { clearInterval(poll); die('manycode: tunnel did not come up in 90s - check the host terminal'); }
   }, 1500);
+} else if (cmd === 'say') {
+  const path = require('path');
+  const fs = require('fs');
+  const { normalizeCode } = require('../lib/codes');
+  const o = parseFlags(argv, { '--code=': 'code' });
+  const text = o._.join(' ').trim();
+  if (!text) die('usage: manycode say <message>');
+  const sessions = require('../lib/state').list();
+  const wanted = normalizeCode(o.code);
+  const matches = wanted ? sessions.filter((s) => s.code === wanted) : sessions;
+  if (!matches.length) die(wanted ? `manycode: no active session with code ${wanted}` : 'manycode: no active sessions');
+  if (matches.length > 1) die('manycode: several sessions running - pick one: manycode say --code <code> <message>\n' + matches.map((s) => `  ${s.code}  ${path.basename(s.cwd || '')}`).join('\n'));
+  fs.writeFileSync(path.join(require('../lib/paths').DIR, 'sessions', matches[0].pid + '.say'), JSON.stringify({ text }));
+  console.log(`manycode: sent to ${matches[0].code}`);
 } else if (cmd === 'stop') {
   const path = require('path');
   const { normalizeCode } = require('../lib/codes');

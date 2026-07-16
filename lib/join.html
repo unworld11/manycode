@@ -20,6 +20,21 @@
   #bar .status.live { color: #86c48e; }
   #bar .hint { margin-left: auto; color: #5c6570; }
   #wrap { position: absolute; inset: 37px 0 0 0; padding: 6px; box-sizing: border-box; }
+  body.chat-open #wrap { right: 280px; }
+  #side { position: absolute; top: 37px; right: 0; bottom: 0; width: 280px; box-sizing: border-box;
+    background: #0e1116; border-left: 1px solid #232a33; display: flex; flex-direction: column; }
+  #side.hidden { display: none; }
+  #msgs { flex: 1; overflow-y: auto; padding: 12px; font-size: 12.5px; line-height: 1.5; }
+  #msgs .m { margin-bottom: 9px; word-wrap: break-word; }
+  #msgs .who { font-weight: 700; }
+  #msgs .host-tag { color: #8a94a0; font-size: 10.5px; }
+  #chatin { margin: 10px; padding: 8px 10px; background: #0b0d10; border: 1px solid #232a33;
+    border-radius: 5px; color: #e8e4dc; font: inherit; font-size: 12.5px; }
+  #chatin:focus { outline: none; border-color: #d97757; }
+  #chatbtn { background: none; border: 1px solid #232a33; border-radius: 4px; color: #8a94a0;
+    font: inherit; font-size: 11.5px; padding: 2px 10px; cursor: pointer; }
+  #chatbtn:hover { border-color: #d97757; color: #d97757; }
+  #chatbtn .n { color: #d97757; font-weight: 700; }
   #term, .xterm, .xterm .xterm-viewport { height: 100%; background: #0b0d10; }
   #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
     background: rgba(11,13,16,0.92); z-index: 10; }
@@ -45,8 +60,13 @@
   <span class="code" id="barcode"></span>
   <span class="status" id="barstatus">not connected</span>
   <span class="hint" id="barhint"></span>
+  <button id="chatbtn" type="button">chat</button>
 </div>
 <div id="wrap"><div id="term"></div></div>
+<div id="side" class="hidden">
+  <div id="msgs"></div>
+  <input id="chatin" autocomplete="off" spellcheck="false" placeholder="message the room - enter sends" />
+</div>
 <div id="overlay">
   <div id="card">
     <h1>join a <span>manycode</span> session</h1>
@@ -97,6 +117,51 @@
     return out;
   }
 
+  var chatOpen = false, unread = 0;
+  function nameColor(n) {
+    var h = 0;
+    for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+    return 'hsl(' + (h % 360) + ', 45%, 70%)';
+  }
+  function syncChat() {
+    document.body.classList.toggle('chat-open', chatOpen);
+    $('side').classList.toggle('hidden', !chatOpen);
+    if (chatOpen) { unread = 0; }
+    $('chatbtn').innerHTML = 'chat' + (unread ? ' <span class="n">' + unread + '</span>' : '');
+    fit.fit();
+    if (ws && ws.readyState === 1 && joined) {
+      ws.send(JSON.stringify({ t: 'resize', cols: term.cols, rows: term.rows }));
+    }
+  }
+  function addMsg(from, text, isHost, mine) {
+    var d = document.createElement('div');
+    d.className = 'm';
+    var who = document.createElement('span');
+    who.className = 'who';
+    who.style.color = mine ? '#86c48e' : nameColor(from);
+    who.textContent = mine ? 'you' : from;
+    d.appendChild(who);
+    if (isHost) {
+      var tag = document.createElement('span');
+      tag.className = 'host-tag';
+      tag.textContent = ' host';
+      d.appendChild(tag);
+    }
+    d.appendChild(document.createTextNode('  ' + text));
+    $('msgs').appendChild(d);
+    $('msgs').scrollTop = $('msgs').scrollHeight;
+    if (!chatOpen && !mine) { unread++; syncChat(); }
+  }
+  $('chatbtn').addEventListener('click', function () { chatOpen = !chatOpen; syncChat(); if (chatOpen) $('chatin').focus(); });
+  $('chatin').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var text = $('chatin').value.trim();
+    $('chatin').value = '';
+    if (!text || !ws || ws.readyState !== 1 || !joined) return;
+    ws.send(JSON.stringify({ t: 'chat', text: text }));
+    addMsg('you', text, false, true);
+  });
+
   function connect() {
     var code = normalize($('code').value);
     var name = $('name').value.trim() || 'browser-friend';
@@ -121,13 +186,18 @@
       }
       var m; try { m = JSON.parse(ev.data); } catch { return; }
       if (!m) return;
-      if (m.t === 'hold') {
+      if (m.t === 'chat') {
+        addMsg(m.from, m.text, !!m.host);
+      } else if (m.t === 'chatlog') {
+        (m.msgs || []).forEach(function (c) { addMsg(c.from, c.text, !!c.host); });
+      } else if (m.t === 'hold') {
         msg('waiting for the host to let you in…');
       } else if (m.t === 'ok') {
         joined = true;
         readOnly = !!m.readOnly;
         $('overlay').style.display = 'none';
         status('connected as ' + name + (readOnly ? ' · view only' : ''), true);
+        if (window.innerWidth > 900 && !chatOpen) { chatOpen = true; syncChat(); term.focus(); }
         $('barhint').textContent = readOnly ? 'watching' : 'you can type';
         term.focus();
         // if the replay never lands (empty buffer), don't hold frames forever

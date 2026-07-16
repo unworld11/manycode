@@ -126,6 +126,15 @@ for the whole session, and late joiners get the recent scrollback replayed plus 
 fresh repaint. Started lan-only and now want someone remote? `manycode tunnel` opens
 the anywhere-link on the running session and prints the join command - no restart.
 
+## Talk on the side
+
+Every session has a chat channel that never touches the shared prompt, so you can
+sort out who's driving without typing over each other. In the browser it's a
+sidebar with an unread badge; in the CLI, `Ctrl-T` opens a chat line (Enter sends,
+Esc cancels); the host sends from any terminal with `manycode say "message"` and
+gets a macOS notification when someone writes. Late joiners get the recent chat
+replayed, and names are stamped by the host - nobody can impersonate anyone.
+
 ## Useful flags
 
 - `manycode host --read-only` - friends can watch but not type.
@@ -135,6 +144,10 @@ the anywhere-link on the running session and prints the join command - no restar
 - `manycode host --record` - saves the whole session as an asciinema `.cast` file
   in the project directory; play it back with `asciinema play` or upload it to
   asciinema.org.
+- `manycode host --share-secrets` - hosting a folder with `.env` files asks
+  what joiners should see; the default masks the values with `••••••` in the live
+  stream, the scrollback replay, and recordings (your own screen stays raw).
+  `--redact-secrets` skips the question, `--share-secrets` shares real values.
 - `manycode host -- --resume` - everything after `--` goes to claude itself.
 - `manycode host <anything>` - share any terminal program, agents or otherwise.
 - `manycode join CODE --name dev-priya` - how you appear on the host's side.
@@ -155,6 +168,12 @@ host's machine - that means running arbitrary commands. Only share codes with pe
 you'd hand your laptop to. Codes die with the session, direct/LAN traffic is plain
 `ws://` on your local network, and the relay sees terminal bytes, so put the relay
 behind TLS (`wss://`) if you deploy one.
+
+Hosting a folder that contains `.env` files masks their values in everything
+joiners see (and in recordings) unless you explicitly `--share-secrets` - so a
+stray `cat .env` on stream shows dots, not credentials. It's a literal byte match:
+values also visible through some other encoding still leak, so treat it as a
+seatbelt, not a vault.
 
 `--approve` adds a second gate: a joiner with the right code still waits until you
 click Allow. That's enforced by the host for direct, LAN, and tunnel joiners (their
