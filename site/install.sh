@@ -5,8 +5,12 @@ set -e
 
 REPO="https://github.com/unworld11/manycode"
 DIR="${MANYCODE_DIR:-${CCSHARE_DIR:-$HOME/manycode}}"
-# manycode was born as ccshare - keep updating an existing checkout
-if [ ! -d "$DIR/.git" ] && [ -d "$HOME/ccshare/.git" ]; then DIR="$HOME/ccshare"; fi
+# manycode was born as ccshare - keep updating an existing checkout, but only
+# if it's clean. a checkout with local changes (someone hacking on it) is left
+# alone and we clone fresh to ~/manycode instead of failing the install.
+if [ ! -d "$DIR/.git" ] && [ -d "$HOME/ccshare/.git" ]; then
+  if [ -z "$(git -C "$HOME/ccshare" status --porcelain 2>/dev/null)" ]; then DIR="$HOME/ccshare"; fi
+fi
 
 for tool in git node npm; do
   if ! command -v "$tool" >/dev/null 2>&1; then
@@ -20,7 +24,8 @@ if [ -d "$DIR/.git" ]; then
   # npm install rewrites the lockfile; that isn't a user edit
   git -C "$DIR" checkout -- package-lock.json 2>/dev/null || true
   if [ -n "$(git -C "$DIR" status --porcelain)" ]; then
-    echo "manycode: you have local changes in $DIR - stash or commit them, then re-run"
+    echo "manycode: $DIR has local changes - leaving it untouched."
+    echo "manycode: commit or stash there, or run with MANYCODE_DIR=~/manycode-fresh to install elsewhere."
     exit 1
   fi
   git -C "$DIR" fetch origin

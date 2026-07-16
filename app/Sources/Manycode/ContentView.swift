@@ -25,6 +25,7 @@ struct Shell: View {
             // launched from Finder/terminal the window can open behind others
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
+            app.refreshCLI()
         }
     }
 
@@ -112,33 +113,37 @@ struct HostView: View {
             VStack(alignment: .leading, spacing: 22) {
                 header
 
-                Button(action: hostFolder) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "folder.badge.plus").font(.system(size: 16)).foregroundColor(.mcGreen)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(busy ? "starting…" : "Host a folder")
-                                .font(.system(size: 14, weight: .semibold)).foregroundColor(.mcText)
-                            Text("share a live agent session from any project directory")
-                                .font(.system(size: 12)).foregroundColor(.mcDim(0.55))
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right").foregroundColor(.mcDim(0.4))
-                    }
-                    .padding(16)
-                    .background(Color.mcGreenGlow)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mcGreen.opacity(0.25)))
-                    .cornerRadius(12)
-                }
-                .buttonStyle(.plain).disabled(busy)
-
-                if let err { Text(err).font(.system(size: 12)).foregroundColor(.mcRed) }
-
-                if sessions.isEmpty {
-                    emptyState
+                if !app.cliInstalled {
+                    EngineSetupCard()   // hosting needs the CLI engine; install it here
                 } else {
-                    Text("SESSIONS ON THIS MAC").font(.system(size: 10, weight: .semibold)).kerning(0.6).foregroundColor(.mcDim(0.45))
-                    VStack(spacing: 8) {
-                        ForEach(sessions) { s in SessionCard(s: s) { open(s) } }
+                    Button(action: hostFolder) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "folder.badge.plus").font(.system(size: 16)).foregroundColor(.mcGreen)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(busy ? "starting…" : "Host a folder")
+                                    .font(.system(size: 14, weight: .semibold)).foregroundColor(.mcText)
+                                Text("share a live agent session from any project directory")
+                                    .font(.system(size: 12)).foregroundColor(.mcDim(0.55))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundColor(.mcDim(0.4))
+                        }
+                        .padding(16)
+                        .background(Color.mcGreenGlow)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mcGreen.opacity(0.25)))
+                        .cornerRadius(12)
+                    }
+                    .buttonStyle(.plain).disabled(busy)
+
+                    if let err { Text(err).font(.system(size: 12)).foregroundColor(.mcRed) }
+
+                    if sessions.isEmpty {
+                        emptyState
+                    } else {
+                        Text("SESSIONS ON THIS MAC").font(.system(size: 10, weight: .semibold)).kerning(0.6).foregroundColor(.mcDim(0.45))
+                        VStack(spacing: 8) {
+                            ForEach(sessions) { s in SessionCard(s: s) { open(s) } }
+                        }
                     }
                 }
             }
@@ -216,6 +221,92 @@ struct SessionCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - engine setup (install the CLI on first launch)
+
+struct EngineSetupCard: View {
+    @EnvironmentObject var app: AppState
+    @State private var phase: Phase = .ready
+    @State private var log = ""
+    @State private var missing: [String] = []
+
+    enum Phase { case ready, installing, failed }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 11) {
+                Image(systemName: "shippingbox").font(.system(size: 18)).foregroundColor(.mcGreen)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Set up the hosting engine").font(.system(size: 14, weight: .semibold)).foregroundColor(.mcText)
+                    Text("joining works right now; hosting a session needs the manycode command-line engine.")
+                        .font(.system(size: 12)).foregroundColor(.mcDim(0.6)).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            if !missing.isEmpty {
+                Text("First install \(missing.joined(separator: ", ")) — the engine is a small git clone the installer sets up. Then re-check.")
+                    .font(.system(size: 12)).foregroundColor(.mcAmber).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 10) {
+                    setupButton("Re-check", filled: false) { missing = CLIManager.missingTools() }
+                    Link("get node", destination: URL(string: "https://nodejs.org")!).font(.system(size: 12)).foregroundColor(.mcGreen)
+                }
+            } else if phase == .installing || !log.isEmpty {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        Text(log.isEmpty ? "starting…" : log)
+                            .font(.system(size: 11, design: .monospaced)).foregroundColor(.mcDim(0.75))
+                            .frame(maxWidth: .infinity, alignment: .leading).id("log")
+                    }
+                    .frame(height: 150).padding(10)
+                    .background(Color.mcDeep).cornerRadius(8)
+                    .onChange(of: log) { _ in proxy.scrollTo("log", anchor: .bottom) }
+                }
+                if phase == .failed {
+                    Text("install didn't finish — you can also run it in a terminal:")
+                        .font(.system(size: 12)).foregroundColor(.mcRed)
+                    Text("curl -fsSL https://manycode.vercel.app/install.sh | sh")
+                        .font(.system(size: 11.5, design: .monospaced)).foregroundColor(.mcText)
+                        .padding(8).background(Color.mcDeep).cornerRadius(6).textSelection(.enabled)
+                    setupButton("Try again", filled: true, action: runInstall)
+                }
+            } else {
+                Text("one-time setup — clones manycode to ~/manycode and links the command. same thing the site's install line does.")
+                    .font(.system(size: 12)).foregroundColor(.mcDim(0.5)).fixedSize(horizontal: false, vertical: true)
+                setupButton("Install the engine", filled: true, action: runInstall)
+            }
+        }
+        .padding(18)
+        .background(Color.mcPanel)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.mcBorder))
+        .cornerRadius(12)
+        .onAppear { missing = CLIManager.missingTools() }
+    }
+
+    private func runInstall() {
+        guard missing.isEmpty else { return }
+        phase = .installing
+        log = ""
+        CLIManager.install(onOutput: { log += $0 }, completion: { ok in
+            if ok {
+                app.refreshCLI()   // flips cliInstalled → parent swaps this card out
+            } else {
+                phase = .failed
+            }
+        })
+    }
+
+    private func setupButton(_ t: String, filled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(t).font(.system(size: 13, weight: .semibold))
+                .foregroundColor(filled ? .mcDeep : .mcGreen)
+                .padding(.horizontal, 18).padding(.vertical, 8)
+                .background(filled ? Color.mcGreen : .clear)
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(filled ? .clear : Color.mcGreen.opacity(0.35)))
+                .cornerRadius(8)
+        }
+        .buttonStyle(.plain).disabled(phase == .installing)
     }
 }
 

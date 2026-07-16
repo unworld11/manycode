@@ -32,6 +32,14 @@ final class AppState: ObservableObject {
     @Published var section: Section = .host
     @Published var hostedSession: LocalSession?
     @Published var userName: String = Discovery.configName()
+    @Published var cliInstalled = true   // assume until the first check says otherwise
+
+    func refreshCLI() {
+        DispatchQueue.global().async {
+            let ok = CLIManager.isInstalled()
+            DispatchQueue.main.async { self.cliInstalled = ok }
+        }
+    }
 }
 
 // MARK: - design A palette (terminal green)
