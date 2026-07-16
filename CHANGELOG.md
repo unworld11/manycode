@@ -4,6 +4,18 @@ manycode installs and updates straight from git (`manycode update` is a `git pul
 so what you actually run is `master` HEAD - these tags just mark the points worth
 naming.
 
+## 0.6.0
+
+- **A native Mac app you can download.** manycode is now a real macOS app
+  (SwiftUI + SwiftTerm) — a green terminal-native window with a sidebar
+  (Host / Join / Messages / Recordings / Settings), the live agent terminal,
+  a code hero to invite people, and room chat in a side rail. Grab the DMG
+  from the site, drag manycode into Applications, done. It speaks the same
+  protocol as the CLI and browser, and hosting from the app just drives the
+  CLI engine underneath. Build it yourself with `cd app && ./build-dmg.sh`.
+  (The download is unsigned for now, so the first launch is right-click →
+  Open; a notarized build comes later.)
+
 ## 0.5.0
 
 - **Talk on the side.** Every session now has a chat channel that never touches
