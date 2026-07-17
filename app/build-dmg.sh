@@ -50,11 +50,21 @@ hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO "$BUILD
 rm -rf "$STAGE"
 
 # Notarize + staple so downloaders don't see the "unidentified developer"
-# warning. Needs the Apple ID / team / app-specific password.
-if [ -n "$MANYCODE_SIGN_ID" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_TEAM_ID" ] && [ -n "$APPLE_APP_PW" ]; then
-  echo "▸ notarize (this waits on Apple, ~1-5 min)"
+# warning. Preferred: a keychain profile (MANYCODE_NOTARY_PROFILE) created once
+# with `xcrun notarytool store-credentials` so no password sits in the env.
+# Fallback: explicit Apple ID / team / app-specific password.
+NOTARIZED=""
+if [ -n "$MANYCODE_SIGN_ID" ] && [ -n "$MANYCODE_NOTARY_PROFILE" ]; then
+  echo "▸ notarize via keychain profile '$MANYCODE_NOTARY_PROFILE' (waits on Apple, ~1-5 min)"
+  xcrun notarytool submit "$BUILD/Manycode.dmg" --keychain-profile "$MANYCODE_NOTARY_PROFILE" --wait
+  NOTARIZED=1
+elif [ -n "$MANYCODE_SIGN_ID" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_TEAM_ID" ] && [ -n "$APPLE_APP_PW" ]; then
+  echo "▸ notarize (waits on Apple, ~1-5 min)"
   xcrun notarytool submit "$BUILD/Manycode.dmg" \
     --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PW" --wait
+  NOTARIZED=1
+fi
+if [ -n "$NOTARIZED" ]; then
   echo "▸ staple"
   xcrun stapler staple "$BUILD/Manycode.dmg"
   echo "✓ $BUILD/Manycode.dmg (signed + notarized - no Gatekeeper warning)"
