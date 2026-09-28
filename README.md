@@ -26,6 +26,167 @@ manycode host kimi         # kimi cli
 manycode host aider --model gpt-5   # args pass straight through
 ```
 
+## CLI and agent setup
+
+From a checkout: `npm install && npm link`, then `manycode setup`.
+Setup installs the `manycode-setup` skill for Codex and Claude Code before
+opening the preferences wizard. For automated installs:
+
+```sh
+manycode setup --skills-only
+manycode doctor
+```
+
+Start a new Codex or Claude Code session and say:
+**Use manycode-setup to configure Manycode and start a shared coding session.**
+The curl installer also installs this skill. These changes must be published
+before they are available through the public installer.
+
+To prepare a ChatGPT desktop SSH connection to a server you already use:
+
+```sh
+manycode setup --ssh-host your-server.example --ssh-user your-user --ssh-identity ~/.ssh/your-key --ssh-alias manycode
+manycode doctor --ssh manycode
+```
+
+The CLI maintains a marked entry in `~/.ssh/config`, preserves other entries,
+and saves the original as `~/.ssh/config.before-manycode` on its first change.
+It uses an existing key; server provisioning and key authorization remain separate.
+The SSH check requires a trusted host key and `codex` on the remote login shell's
+PATH. Authenticate Codex on that host before using it in the desktop app.
+Then select **manycode** in ChatGPT **Settings → Connections → SSH** and choose
+a project. `CODEX_HOME` and `CLAUDE_CONFIG_DIR` override skill install locations.
+
+SSH setup is connection preparation, not desktop multiplayer. Sharing a live
+ChatGPT/Codex desktop thread is not integrated yet. The Claude skill targets
+Claude Code; it does not attach to chats in the Claude desktop app.
+
+## Shared tasks: work together across handoffs
+
+Create a task in the project you want the agent to work on:
+
+```sh
+manycode host --task "Build checkout" --detach
+manycode task open
+```
+
+`task open` opens local host controls in your browser. Share the ordinary browser
+link or session code with teammates. The host controls link includes a private
+owner token; it is removed from the address bar after loading and is never part of
+the ordinary invite. CLI sessions without `--task` retain the existing everyone-can-type behavior.
+The macOS app's **Host a folder** flow creates a task automatically.
+
+Each shared task has a goal, plan, optional preview link, live terminal, feedback,
+people, activity history, and Git review. The browser and macOS **Task** panels
+use the same host-enforced protocol.
+
+- **Shared prompts.** Contributors and reviewers can use **Send prompt** without
+  a control handoff. Everyone sees the attributed prompt history and the same live
+  agent terminal, including responses and tool activity. Prompts enter a bounded
+  FIFO queue; sent means delivered to the terminal, not a completed AI response.
+  The agent decides how to handle input while busy. Failed deliveries stay visible
+  and are not retried automatically. Use the composer for shared prompts rather
+  than mixing them with partially typed raw terminal input.
+- **One raw-terminal driver.** The host starts with control. Teammates request it; the current
+  driver or host hands it to a connected participant. Host terminal input is also
+  blocked while someone else drives. If the driver disconnects, control returns
+  to the host, who can recover it through `manycode task open`.
+- **Suggestions and instructions are separate.** Attach feedback to a `file:line`,
+  preview, or decision. The driver accepts or declines it. Accepting a suggestion
+  never submits it to the agent; **Send prompt** is a separate, attributed action available to contributors.
+- **Roles.** Joiners start as contributors. Only the host can assign viewer,
+  contributor, or reviewer roles. Viewers can inspect the task and diff but cannot
+  change the task or request control. Roles apply to the current connection;
+  reconnecting creates a new contributor identity and requires fresh review privileges.
+- **Catch-up.** Late joiners get the current brief, feedback decisions, approvals,
+  the latest 200 prompts, and the latest 100 recorded events. The browser highlights updates since that
+  browser's last visit. The native panel shows the five latest events. This is a
+  summary of recorded actions, not an AI interpretation of terminal output.
+- **Review.** Resolve open feedback, then request review. Refresh the Git diff
+  before approving. Only a designated reviewer or the host can approve. Completion
+  requires an approval matching the current HEAD and tracked working-tree diff.
+  Changed files invalidate an attempted completion; request a fresh review. Stage
+  or ignore untracked files first. Review/complete states block new human input,
+  but do not pause an already-running agent. These approvals do not merge, deploy,
+  or intercept commands the agent executes itself.
+- **Preview.** The task links to an existing HTTP(S) preview. Use an address your
+  teammates can reach; Manycode does not publish or proxy your development server.
+
+`--detach` keeps the host and its agent running after the launching terminal exits.
+Closing a browser or choosing **Leave running** in the macOS app also leaves the
+host alive. The machine must remain awake and online. This is host-backed execution,
+not cloud hosting or automatic failover. Use `manycode stop CODE` to end it.
+
+Tasks are saved under `~/.manycode/tasks/` with owner-only file permissions and
+atomic writes. This directory contains the task brief, feedback, and recorded
+instructions, so treat it as project data. Raw keystrokes and complete terminal
+output are not part of the task journal; use `--record` for a terminal recording.
+Existing `.env` redaction also applies to shared task text and diffs. It only masks
+values discovered at startup, as described below.
+
+```sh
+manycode tasks                         # saved tasks, status, live codes
+manycode task show --code ABC123        # current task, people IDs, recent events
+manycode task update --goal "Handle failed payments" --code ABC123
+manycode task handoff --target d2 --code ABC123
+manycode task role --target d2 --role reviewer --code ABC123
+manycode task changes --code ABC123
+
+# After the host has stopped, in the same project directory:
+manycode host --resume-task TASK_ID --detach
+# To also resume Claude's own conversation, pass its resume argument:
+manycode host --resume-task TASK_ID --detach -- --resume
+```
+
+Resuming restores the task journal and brief, marks undelivered prompts failed
+without replaying them, resets review approvals, and starts
+an agent process. Provider conversation recovery depends on that agent's resume
+options; Manycode does not restore a crashed PTY. A lock prevents two live hosts
+from writing the same task. Task discovery is local to the host account; remote
+teammates join a specific task by its code. There is no organization directory or
+account-based project membership in this version.
+
+CLI joiners can use `Ctrl-T` with `/control`, `/handoff ID`, `/suggest TEXT`,
+`/instruct TEXT`, `/review`, `/working`, `/approve HASH`, or `/complete HASH`.
+Use the browser for the full task brief and diff. `manycode task` commands are
+local host controls, with `--code` selecting among multiple live tasks.
+
+Task sessions require an updated relay. They refuse older relays without sender
+identity support and continue with direct/LAN hosting. Updated relays stamp input
+identity and withhold task-session output until the host admits the joiner.
+
+## Development checks
+
+```sh
+npm ci
+npm test                     # existing flows + task/relay/persistence tests
+npm run test:browser          # isolated two-person browser flow + mobile screenshots
+cd app && swift build
+```
+
+Browser tests use fresh, headless profiles against a temporary local Git project.
+They use installed Chrome on macOS, `BROWSER_EXECUTABLE` when provided, or a
+Playwright Chromium installed with `npx playwright install chromium`. External
+network requests are blocked during the UI test; terminal assets are served locally.
+`MANYCODE_STATE_DIR` isolates task/config/session files for tests.
+
+On an Xcode installation without the Metal toolchain, `swift build --build-system
+native` builds SwiftTerm using its bundled shader source. Swift marks that build
+system deprecated; installing the Metal toolchain enables the default build path.
+
+## Publishing Mac releases
+
+`npm run dist:mac` builds an ad-hoc signed universal app, DMG,
+and ZIP without an Apple Developer ID certificate. `npm run verify:release` checks the packaged downloads, and
+`npm run publish:release` uploads a draft, verifies the downloaded bytes, then
+makes that version latest. These releases are not notarized; first launch may
+require Privacy & Security > Open Anyway.
+The native app's **Check for Updates** menu opens new release downloads without
+replacing an app during live work.
+
+See [macOS release setup](app/NOTARIZE.md) for GitHub Actions, versioning,
+installation instructions, and optional notarization.
+
 ## Install (and update)
 
 ```sh

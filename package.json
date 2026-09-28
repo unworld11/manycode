@@ -1,6 +1,6 @@
 {
   "name": "manycode",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Multiplayer coding agents - share your live session with a code, like AirDrop",
   "license": "MIT",
   "bin": {
@@ -8,18 +8,37 @@
     "ccshare": "bin/manycode.js"
   },
   "scripts": {
-    "test": "node test/smoke.js && node test/edges.js",
-    "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true"
+    "test": "node test/smoke.js && node test/edges.js && node test/tasks.js && node test/releases.js && node test/setup.js",
+    "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true",
+    "test:browser": "node test/browser.js",
+    "dist:mac": "bash app/build-dmg.sh",
+    "dist:mac:dev": "bash app/build-dmg.sh --development",
+    "verify:release": "node scripts/verify-release.js",
+    "publish:release": "node scripts/publish-release.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "node-pty": "^1.0.0",
     "ws": "^8.18.0"
   },
   "optionalDependencies": {
     "cloudflared": "^0.7.1"
-  }
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "skills/",
+    "menubar/",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ]
 }

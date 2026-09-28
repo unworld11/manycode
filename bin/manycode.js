@@ -11,6 +11,9 @@ const HELP = `manycode - multiplayer claude code
       --port <n>       websocket port for direct joiners (default 42518)
       --code <code>    pick your own code instead of a random one
       --read-only      joiners can watch but not type
+      --task <title>   create a persistent shared task with one driver
+      --resume-task <id> resume a saved task in its original project
+      --detach         keep hosting after this terminal closes
       --max <n>        max simultaneous joiners (default 5)
       --approve        each joiner waits until you allow them in a dialog
                        (macOS; manycode setup can make it the default)
@@ -36,6 +39,17 @@ const HELP = `manycode - multiplayer claude code
       the room without typing into the shared prompt.
       no terminal handy? the host's banner also shows a browser link -
       open it and you're in the session from any browser, no install.
+
+  manycode tasks
+      list saved tasks and their live session codes.
+
+  manycode task [show|open|changes|catch-up|<action>] [--code CODE]
+      open launches host controls in your browser; show prints task state.
+      actions: update, request-control, handoff, role, feedback,
+      resolve-feedback, instruct, working, request-review, approve, complete.
+      fields: --target ID --role viewer|contributor|reviewer --text TEXT
+      --anchor FILE:LINE --feedback ID --resolution accepted|rejected
+      --title TITLE --goal TEXT --plan TEXT --preview URL --revision HASH
 
   manycode relay [--port <n>]
       run a relay server so friends outside your network can join.
@@ -63,10 +77,21 @@ const HELP = `manycode - multiplayer claude code
       start the macOS menu bar helper by hand. it stays until you quit it
       from the menu. hosting starts it automatically.
 
-  manycode setup
+  manycode setup [options]
+      install the manycode-setup skill into Codex and Claude Code.
+      --skills-only          install/refresh skills without the wizard
+      --non-interactive      install skills without interactive prompts
+      --ssh-host <host>      configure a desktop SSH connection
+      --ssh-user <user>      remote login username (required with host)
+      --ssh-identity <path>  existing private key (required with host)
+      --ssh-port <port>      default 22
+      --ssh-alias <name>     default manycode
       interactive onboarding: your name, default agent (claude, codex,
       opencode, kimi…), tunnel and menu bar preferences. runs by itself
       the first time you host; rerun it whenever you like.
+
+  manycode doctor [--ssh <alias>]
+      verify installed skills; optionally test SSH and remote Codex.
 
   manycode update
       pull the latest manycode from github and reinstall deps. host and
@@ -123,9 +148,10 @@ const argv = process.argv.slice(2);
 const cmd = argv.shift();
 
 if (cmd === 'host') {
+  const originalHostArgs = argv.slice();
   // the first bare word starts the command to share (codex, opencode, …);
   // everything after it is that command's own argv
-  const valueFlags = new Set(['--relay', '--port', '--code', '--max', '--cmd']);
+  const valueFlags = new Set(['--relay', '--port', '--code', '--max', '--cmd', '--task', '--resume-task']);
   let cmdline = null;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -143,6 +169,9 @@ if (cmd === 'host') {
     '--port=': 'port',
     '--code=': 'code',
     '--read-only': 'readOnly',
+    '--task=': 'task',
+    '--resume-task=': 'resumeTask',
+    '--detach': 'detach',
     '--max=': 'max',
     '--cmd=': 'cmd',
     '--tunnel': 'tunnel',
@@ -160,6 +189,8 @@ if (cmd === 'host') {
     if (o[key] !== undefined && !/^\d+$/.test(String(o[key]))) die(`${flag} must be a number (got '${o[key]}')`);
   }
   (async () => {
+    if (o.task && o.resumeTask) throw new Error('Use --task or --resume-task, not both');
+    if (o.detach) return require('../lib/task-cli').detach(originalHostArgs);
     const config = require('../lib/config');
     // first ever run: onboard before hosting (Ctrl-C skips, saves defaults)
     if (!config.exists() && process.stdin.isTTY) {
@@ -168,6 +199,8 @@ if (cmd === 'host') {
     const cfg = config.load();
     return require('../lib/host').host({
       relay,
+      task: o.task,
+      resumeTask: o.resumeTask,
       port: o.port != null ? Number(o.port) : null,
       code: o.code,
       readOnly: !!o.readOnly,
@@ -197,6 +230,21 @@ if (cmd === 'host') {
     relay: o.relay || process.env.MANYCODE_RELAY || process.env.CCSHARE_RELAY || null,
     name: o.name,
   }).catch((e) => die('manycode: ' + e.message));
+} else if (cmd === 'tasks') {
+  const live = require('../lib/state').list();
+  const tasks = require('../lib/task').listTasks();
+  if (!tasks.length) console.log('No saved tasks. Start one with manycode host --task "Title"');
+  for (const t of tasks) {
+    const s = live.find(s => s.taskId === t.id);
+    console.log(`${t.id}  ${t.status}  ${t.title}  ${s ? 'live: ' + s.code : 'offline'}\n  ${t.cwd}`);
+  }
+} else if (cmd === 'task') {
+  const o = parseFlags(argv, {
+    '--code=': 'code', '--target=': 'target', '--role=': 'role', '--text=': 'text',
+    '--anchor=': 'anchor', '--feedback=': 'feedbackId', '--resolution=': 'resolution',
+    '--title=': 'title', '--goal=': 'goal', '--plan=': 'plan', '--preview=': 'preview', '--revision=': 'revision',
+  });
+  require('../lib/task-cli').run(o._[0] || 'show', o).catch(e => die('manycode: ' + e.message));
 } else if (cmd === 'relay') {
   const o = parseFlags(argv, { '--port=': 'port' });
   const port = Number(o.port || process.env.PORT || 8787);
@@ -286,7 +334,18 @@ if (cmd === 'host') {
   } catch {}
   console.log(`manycode ${pkg.version}${commit}`);
 } else if (cmd === 'setup') {
-  require('../lib/setup').run().then(() => process.exit(0)).catch(() => process.exit(1));
+  const opts = parseFlags(argv, {
+    '--skills-only': 'skillsOnly', '--non-interactive': 'nonInteractive',
+    '--ssh-host=': 'sshHost', '--ssh-user=': 'sshUser', '--ssh-port=': 'sshPort',
+    '--ssh-identity=': 'sshIdentity', '--ssh-alias=': 'sshAlias',
+  });
+  if (opts._.length) die('Unexpected setup arguments');
+  require('../lib/setup-integrations').run(opts).catch(e => die(e.message));
+} else if (cmd === 'doctor') {
+  const opts = parseFlags(argv, { '--ssh=': 'ssh' });
+  if (opts._.length) die('Unexpected doctor arguments');
+  try { process.exitCode = require('../lib/setup-integrations').doctor(opts) ? 0 : 1; }
+  catch (e) { die(e.message); }
 } else if (cmd === 'update') {
   require('../lib/update').runUpdate();
 } else if (cmd === 'menubar') {

@@ -2,26 +2,27 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="referrer" content="no-referrer" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>manycode - join session</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Crect x='7.5' y='8.5' width='7' height='15' rx='1.6' fill='%232f7d52'/%3E%3Crect x='12.5' y='8.5' width='7' height='15' rx='1.6' fill='%2343a86b'/%3E%3Crect x='17.5' y='8.5' width='7' height='15' rx='1.6' fill='%235ee38a'/%3E%3C/svg%3E" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
-<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<link rel="stylesheet" href="/xterm.css" />
+<script src="/xterm.js"></script>
+<script src="/fit.js"></script>
 <style>
   :root { color-scheme: dark; }
   html, body { margin: 0; height: 100%; background: #0b0d10; color: #e8e4dc;
     font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
-  #bar { display: flex; align-items: center; gap: 14px; padding: 8px 14px;
+  #bar { height: 48px; box-sizing: border-box; display: flex; align-items: center; gap: 14px; padding: 8px 14px;
     background: #11151a; border-bottom: 1px solid #232a33; font-size: 12.5px; }
   #bar .brand { font-weight: 700; }
   #bar .code { color: #5ee38a; font-weight: 700; letter-spacing: 0.12em; }
   #bar .status { color: #8a94a0; }
   #bar .status.live { color: #5ee38a; }
   #bar .hint { margin-left: auto; color: #5c6570; }
-  #wrap { position: absolute; inset: 37px 0 0 0; padding: 6px; box-sizing: border-box; }
+  #wrap { position: absolute; inset: 48px 0 0 0; padding: 6px; box-sizing: border-box; }
   body.chat-open #wrap { right: 280px; }
-  #side { position: absolute; top: 37px; right: 0; bottom: 0; width: 280px; box-sizing: border-box;
+  #side { position: absolute; top: 48px; right: 0; bottom: 0; width: 280px; box-sizing: border-box;
     background: #0e1116; border-left: 1px solid #232a33; display: flex; flex-direction: column; }
   #side.hidden { display: none; }
   #msgs { flex: 1; overflow-y: auto; padding: 12px; font-size: 12.5px; line-height: 1.5; }
@@ -52,6 +53,35 @@
   #card button:hover { filter: brightness(1.08); }
   #msg { margin-top: 14px; font-size: 12.5px; color: #e8c170; min-height: 18px; }
   #msg.err { color: #e07a6d; }
+  body.task-open #wrap { right: 420px; }
+  #task-panel { position: absolute; top: 48px; right: 0; bottom: 0; width: 420px; box-sizing: border-box;
+    background: #11151a; border-left: 1px solid #232a33; overflow-y: auto; padding: 20px; font-family: system-ui, sans-serif; }
+  #task-panel[hidden] { display: none; }
+  #task-panel h2 { font-size: 22px; margin: 10px 0; letter-spacing: -.5px; }
+  #task-panel h3, #task-panel summary { font-size: 13px; font-weight: 650; margin: 18px 0 10px; cursor: pointer; }
+  #task-panel p, #task-panel li { font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #task-prompts { max-height: 240px; overflow-y: auto; }
+  #task-panel small, .muted { color: #8a94a0; font-size: 12px; }
+  #task-panel button, #task-panel select, #taskbtn { border: 1px solid #39434f; background: #192128; color: #e8e4dc; border-radius: 5px; padding: 7px 9px; cursor: pointer; margin: 3px 5px 3px 0; }
+  #task-panel button:disabled { opacity: .4; cursor: default; }
+  #task-panel button:hover:enabled { border-color: #5ee38a; }
+  #task-panel input, #task-panel textarea { display: block; width: 100%; box-sizing: border-box; margin: 7px 0; padding: 10px;
+    background: #0b0d10; color: #e8e4dc; border: 1px solid #39434f; border-radius: 5px; font: inherit; font-size: 13px; }
+  #task-panel label { font-size: 12px; color: #8a94a0; }
+  #task-panel a { color: #5ee38a; }
+  #task-status { color: #5ee38a; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
+  #task-error { position: sticky; bottom: -20px; background: #11151a; padding: 12px 0; color: #e8c170; font-size: 12px; }
+  .task-item { border-top: 1px solid #232a33; padding: 10px 0; font-size: 12px; overflow-wrap: anywhere; }
+  .task-item p { margin: 6px 0; }
+  #task-diff { overflow: auto; max-height: 420px; font-size: 11px; background: #0b0d10; padding: 12px; }
+  #task-catchup-box { background: #192820; border: 1px solid #294634; border-radius: 8px; padding: 12px; margin: 16px 0; }
+  #task-catchup-box summary { margin: 0; }
+  #task-catchup-events { padding-left: 16px; }
+  @media (max-width: 720px) {
+    #bar .hint { display: none; } #bar { gap: 8px; }
+    #task-panel { width: 100%; top: 48px; z-index: 3; }
+    body.task-open #wrap { right: 0; } #bar { min-height: 32px; }
+  }
 </style>
 </head>
 <body>
@@ -60,6 +90,7 @@
   <span class="code" id="barcode"></span>
   <span class="status" id="barstatus">not connected</span>
   <span class="hint" id="barhint"></span>
+  <button id="taskbtn" type="button" hidden>task</button>
   <button id="chatbtn" type="button">chat</button>
 </div>
 <div id="wrap"><div id="term"></div></div>
@@ -67,6 +98,42 @@
   <div id="msgs"></div>
   <input id="chatin" autocomplete="off" spellcheck="false" placeholder="message the room - enter sends" />
 </div>
+<aside id="task-panel" hidden aria-label="Shared task">
+  <span id="task-status"></span><h2 id="task-title"></h2><p id="task-driver" class="muted"></p>
+  <button id="task-request">Request control</button>
+  <a id="task-preview" target="_blank" rel="noopener noreferrer" hidden>Open preview ↗</a>
+  <section aria-label="Shared prompts"><h3>Prompt the shared agent</h3>
+    <p class="muted">Everyone sees the same live agent output in the terminal. Contributors can send prompts without taking control.</p>
+    <div id="task-prompts" aria-live="polite"></div>
+    <form id="task-instruction-form">
+      <label for="instruction-text">Your prompt</label><textarea id="instruction-text" required maxlength="2000" placeholder="Ask the agent working in this session…"></textarea><button id="task-instruct">Send prompt</button>
+    </form>
+    <p class="muted">Prompts are submitted in order. “Sent to agent” means delivered to the terminal, not that the answer is finished.</p>
+  </section>
+  <details id="task-catchup-box" open><summary>Catch up</summary><p id="task-catchup"></p><ul id="task-catchup-events"></ul></details>
+  <h3>Goal</h3><p id="task-goal"></p><h3>Plan</h3><p id="task-plan"></p>
+  <details id="task-edit"><summary>Edit task brief</summary><form id="task-brief">
+    <label for="edit-title">Title</label><input id="edit-title" maxlength="200" required>
+    <label for="edit-goal">Goal</label><textarea id="edit-goal" maxlength="2000"></textarea>
+    <label for="edit-plan">Plan</label><textarea id="edit-plan" maxlength="2000"></textarea>
+    <label for="edit-preview">Shared preview URL</label><input id="edit-preview" type="url" placeholder="https://…">
+    <button id="task-save">Save brief</button>
+  </form></details>
+  <details open><summary>People & control</summary><div id="task-people"></div></details>
+  <details open><summary>Feedback</summary><div id="task-feedback"></div>
+    <form id="task-feedback-form"><label for="feedback-anchor">Attach to a file, preview, or decision</label><input id="feedback-anchor" placeholder="src/checkout.js:42 or preview" maxlength="300">
+      <label for="feedback-text">Suggestion</label><textarea id="feedback-text" placeholder="What should change?" required maxlength="2000"></textarea>
+      <button id="task-feedback-send">Suggest change</button><small>Suggestions never execute automatically.</small>
+    </form>
+  </details>
+
+  <details><summary>Changes & review</summary><button id="task-refresh-diff">Refresh diff</button><small id="task-revision"></small><pre id="task-diff">Refresh to inspect the current Git diff.</pre>
+    <p id="task-approval-state" class="muted"></p><button id="task-review">Request review</button><button id="task-approve">Approve revision</button><button id="task-complete">Mark complete</button><button id="task-working">Return to working</button>
+    <p class="muted">Approval records a review of this diff. It does not merge or deploy changes.</p>
+  </details>
+  <details><summary>Activity & decisions</summary><div id="task-activity"></div></details>
+  <div id="task-error" role="status" aria-live="polite"></div>
+</aside>
 <div id="overlay">
   <div id="card">
     <h1>join a <span>manycode</span> session</h1>
@@ -79,6 +146,7 @@
     <div id="msg"></div>
   </div>
 </div>
+<script src="/task-browser.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -95,12 +163,22 @@
   fit.fit();
 
   var normalize = function (s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
-  var hashCode = normalize(location.hash.slice(1));
+  var hashParts = location.hash.slice(1).split(':');
+  var hashCode = normalize(hashParts[0]);
+  var ownerToken = hashParts[1] || '';
+  if (ownerToken) history.replaceState(null, '', '#' + hashCode);
   $('code').value = hashCode;
   $('name').value = localStorage.getItem('manycode-name') || '';
   ($('code').value ? $('name') : $('code')).focus();
 
-  var ws = null, replayed = false, pending = [], readOnly = false, joined = false;
+  var ws = null, replayed = false, pending = [], readOnly = false, joined = false, canType = true;
+  var taskPanel = createTaskPanel(function (m) { if (ws && ws.readyState === 1 && joined) ws.send(JSON.stringify(m)); }, function (allowed) { canType = allowed; $('barhint').textContent = allowed && !readOnly ? 'you are driving' : 'watching · use task controls'; });
+  $('taskbtn').onclick = function () {
+    var open = $('task-panel').hidden;
+    $('task-panel').hidden = !open; document.body.classList.toggle('task-open', open);
+    if (open) { chatOpen = false; syncChat(); }
+    fit.fit();
+  };
 
   function status(text, live) {
     $('barstatus').textContent = text;
@@ -152,7 +230,7 @@
     $('msgs').scrollTop = $('msgs').scrollHeight;
     if (!chatOpen && !mine) { unread++; syncChat(); }
   }
-  $('chatbtn').addEventListener('click', function () { chatOpen = !chatOpen; syncChat(); if (chatOpen) $('chatin').focus(); });
+  $('chatbtn').addEventListener('click', function () { chatOpen = !chatOpen; if (chatOpen) { $('task-panel').hidden = true; document.body.classList.remove('task-open'); } syncChat(); if (chatOpen) $('chatin').focus(); });
   $('chatin').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     var text = $('chatin').value.trim();
@@ -170,13 +248,14 @@
     msg('connecting…');
     $('barcode').textContent = code.slice(0, 3) + ' ' + code.slice(3);
 
+    if (ws) { ws.onclose = null; ws.close(); }
     ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
     ws.binaryType = 'arraybuffer';
     replayed = false; pending = []; joined = false;
 
     ws.onopen = function () {
       fit.fit();
-      ws.send(JSON.stringify({ t: 'join', code: code, name: name, cols: term.cols, rows: term.rows }));
+      ws.send(JSON.stringify({ t: 'join', code: code, name: name, ownerToken: ownerToken || undefined, cols: term.cols, rows: term.rows }));
     };
     ws.onmessage = function (ev) {
       if (typeof ev.data !== 'string') {
@@ -186,6 +265,7 @@
       }
       var m; try { m = JSON.parse(ev.data); } catch { return; }
       if (!m) return;
+      taskPanel.receive(m);
       if (m.t === 'chat') {
         addMsg(m.from, m.text, !!m.host);
       } else if (m.t === 'chatlog') {
@@ -222,6 +302,7 @@
       }
     };
     ws.onclose = function () {
+      taskPanel.disconnect();
       if (joined) {
         status('disconnected - reload to rejoin');
         term.write('\r\n\x1b[38;2;138;148;160m── disconnected ──\x1b[0m\r\n');
@@ -233,7 +314,7 @@
   }
 
   term.onData(function (d) {
-    if (ws && ws.readyState === 1 && joined && !readOnly) ws.send(new TextEncoder().encode(d));
+    if (ws && ws.readyState === 1 && joined && !readOnly && canType) ws.send(new TextEncoder().encode(d));
   });
   var resizeTimer = null;
   window.addEventListener('resize', function () {

@@ -21,15 +21,13 @@ done
 
 if [ -d "$DIR/.git" ]; then
   echo "manycode: found existing install at $DIR - updating"
-  # npm install rewrites the lockfile; that isn't a user edit
-  git -C "$DIR" checkout -- package-lock.json 2>/dev/null || true
   if [ -n "$(git -C "$DIR" status --porcelain)" ]; then
     echo "manycode: $DIR has local changes - leaving it untouched."
     echo "manycode: commit or stash there, or run with MANYCODE_DIR=~/manycode-fresh to install elsewhere."
     exit 1
   fi
   git -C "$DIR" fetch origin
-  git -C "$DIR" reset --hard origin/master
+  git -C "$DIR" merge --ff-only origin/master
 else
   git clone "$REPO" "$DIR"
 fi
@@ -37,6 +35,7 @@ fi
 cd "$DIR"
 npm install --no-fund --no-audit
 npm link >/dev/null 2>&1 || true
+node "$DIR/bin/manycode.js" setup --skills-only
 
 # npm link can land in a bin dir that isn't on PATH (homebrew node keeps its
 # own Cellar); fall back to a symlink somewhere that is
