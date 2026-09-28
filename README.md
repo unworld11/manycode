@@ -70,6 +70,8 @@ not resume the thread in a competing backend. Both backends need message-queue
 support. `--thread ID` selects an exact thread; `--socket PATH` selects a control
 socket. Without `--tunnel`, the invite page listens only on localhost.
 
+Messages render Markdown headings, lists, quotes, links, task lists, and tables. Code blocks include syntax highlighting and copy buttons; wide code and tables scroll within the message. Raw HTML stays inert and remote images are not loaded.
+
 Guests receive live updates containing changed turns, with immediate feedback on submitted prompts. The desktop backend may still take up to ten seconds to pick up queued prompts before model processing starts.
 
 The contributor invite permits reading and prompting. The view-only invite permits

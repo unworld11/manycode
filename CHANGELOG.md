@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.4
+
+- Shared chats render Markdown headings, emphasis, lists, task lists, links, quotes, and tables.
+- Code blocks have syntax highlighting, language labels, and copy buttons. Wide code and tables scroll within the message on mobile.
+- Rendering keeps raw HTML inert and remote images unloaded; streamed updates retain unchanged messages.
+
 ## 0.7.3
 
 - Hosts provide a complete guest prompt with the actual invite, fresh-install and update instructions, and a no-install browser option.

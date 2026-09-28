@@ -15,9 +15,9 @@ const { WebSocketServer } = require('ws');
   let failPrompt = false;
   const event = (socket, type, value) => socket.send(JSON.stringify({ event: type, data: value }));
   const server = http.createServer(async (req, res) => {
-    if (req.url === '/' || req.url === '/client.js') {
+    if (['/', '/client.js', '/markdown.js'].includes(req.url)) {
       res.setHeader('content-type', req.url === '/' ? 'text/html' : 'text/javascript');
-      return res.end(fs.readFileSync(path.join(__dirname, '..', 'lib', req.url === '/' ? 'share-thread.html' : 'share-thread-client.js')));
+      return res.end(fs.readFileSync(path.join(__dirname, '..', 'lib', req.url === '/' ? 'share-thread.html' : req.url === '/markdown.js' ? 'markdown-renderer.js' : 'share-thread-client.js')));
     }
     assert.equal(req.headers.authorization, 'Bearer test-secret');
     if (reject) { res.writeHead(401, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ error: 'Invite is revoked' })); }

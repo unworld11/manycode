@@ -12,46 +12,101 @@
     body{margin:0;background:var(--canvas);color:var(--text);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     ::selection{background:#496752;color:#fff}
     main{max-width:960px;height:100dvh;margin:auto;padding:0 32px;display:flex;flex-direction:column}
-    header{display:flex;align-items:center;gap:24px;min-height:78px;padding:18px 0;border-bottom:1px solid var(--line);flex-shrink:0}
+    main>header{display:flex;align-items:center;gap:24px;min-height:78px;padding:18px 0;border-bottom:1px solid var(--line);flex-shrink:0}
     .brand{color:var(--accent);font-size:17px;font-weight:650;letter-spacing:-.025em;flex-shrink:0}
-    h1{margin:0;min-width:0;flex:1;font-size:16px;line-height:1.45;font-weight:550;overflow-wrap:anywhere;text-wrap:balance}
+    #title{margin:0;min-width:0;flex:1;font-size:16px;line-height:1.45;font-weight:550;overflow-wrap:anywhere;text-wrap:balance}
     #status{color:var(--muted);font-size:12px;line-height:1.5;max-width:220px;text-align:right;overflow-wrap:anywhere}
     #notice{flex-shrink:0;margin:14px 0 8px;color:var(--muted);font-size:12px;line-height:1.6}
     #messages{min-height:0;flex:1;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-color:#526157 transparent;scrollbar-width:thin;padding:12px 24px 20px}
     #transcript,#pending{max-width:740px;margin:auto}
-    article{margin:0 0 28px;padding:0;white-space:pre-wrap;overflow-wrap:anywhere}
-    article b{display:block;margin-bottom:8px;color:var(--muted);font-size:12px;font-weight:550;line-height:1.4;text-transform:capitalize}
+    article{margin:0 0 28px;padding:0;overflow-wrap:anywhere}
+    article .message-author{display:block;margin-bottom:8px;color:var(--muted);font-size:12px;font-weight:550;line-height:1.4;text-transform:capitalize}
     article[data-role=user]{width:fit-content;max-width:88%;margin-left:auto;padding:14px 18px;background:var(--surface);border-radius:16px}
-    article[data-role=user] b{color:var(--accent)}
+    article[data-role=user] .message-author{color:var(--accent)}
     article[data-role=assistant]{padding:4px 0}
     article[data-role=tool]{margin:0 0 20px;color:var(--muted);font-size:13px;line-height:1.6}
-    article[data-role=tool] b{margin-bottom:4px}
+    article[data-role=tool] .message-author{margin-bottom:4px}
+    .message-body{white-space:pre-wrap;min-width:0}
+    .markdown-body{white-space:normal;line-height:1.7;min-width:0}
+    .markdown-body>:first-child{margin-top:0}
+    .markdown-body>:last-child{margin-bottom:0}
+    .markdown-body p{margin:0 0 16px}
+    .markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4,.markdown-body h5,.markdown-body h6{margin:28px 0 12px;font-weight:650;line-height:1.35;letter-spacing:-.015em;color:var(--text);overflow-wrap:anywhere}
+    .markdown-body h1{font-size:26px}
+    .markdown-body h2{font-size:22px}
+    .markdown-body h3{font-size:19px}
+    .markdown-body h4{font-size:17px}
+    .markdown-body h5,.markdown-body h6{font-size:16px}
+    .markdown-body strong{font-weight:650}
+    .markdown-body a{color:#b9dec8;text-decoration-thickness:1px;text-underline-offset:3px}
+    .markdown-body a:hover{color:#e0f2e6}
+    .markdown-body a:focus-visible,.markdown-body .copy-code:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px}
+    .markdown-body ul,.markdown-body ol{margin:0 0 16px;padding-left:26px}
+    .markdown-body li{margin:6px 0;padding-left:3px}
+    .markdown-body li::marker{color:var(--muted)}
+    .markdown-body li>ul,.markdown-body li>ol{margin:6px 0}
+    .markdown-body li>p{margin:8px 0}
+    .markdown-body .task-list-item{list-style:none}
+    .markdown-body input[type=checkbox]{width:15px;height:15px;margin:0 8px 0 -22px;accent-color:var(--accent);vertical-align:-2px;opacity:1}
+    .markdown-body blockquote{margin:20px 0;padding:0 0 0 18px;border-left:1px solid #708f7a;color:#c2cdc5}
+    .markdown-body blockquote>:last-child{margin-bottom:0}
+    .markdown-body hr{height:0;margin:28px 0;border:0;border-top:1px solid var(--line)}
+    .markdown-body code,.markdown-body pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.7;font-variant-ligatures:none}
+    .markdown-body :not(pre)>code{padding:2px 5px;border-radius:4px;background:#303b33;color:#d2e8d9;white-space:break-spaces;overflow-wrap:anywhere}
+    .markdown-body pre{max-width:100%;margin:16px 0;padding:16px;overflow-x:auto;background:#111713;color:#e0e8e3;border-radius:12px;white-space:pre;overflow-wrap:normal;tab-size:2;scrollbar-width:thin;scrollbar-color:#526157 transparent}
+    .markdown-body pre code{display:block;padding:0;border:0;background:none;color:inherit;white-space:inherit;overflow-wrap:normal}
+    .markdown-body .code-block{max-width:100%;min-width:0;margin:20px 0;overflow:hidden;border-radius:12px;background:#111713}
+    .markdown-body .code-block-header{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;padding:0 8px 0 16px;background:#29342c}
+    .markdown-body .code-language{color:#c0d0c5;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+    .markdown-body .copy-code{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-height:44px;margin:0;padding:8px 10px;border:0;border-radius:6px;background:transparent;color:#d3e4d9;font:inherit;font-size:12px;line-height:1.5;cursor:pointer}
+    .markdown-body .copy-code:hover{background:#3c4a40;color:#fff}
+    .markdown-body .copy-code:active{background:#46594c}
+    .markdown-body .copy-code:disabled{color:#aebdb3;cursor:default}
+    .markdown-body .code-block pre{margin:0;border-radius:0}
+    .markdown-body .table-scroll{max-width:100%;overflow-x:auto;margin:20px 0;scrollbar-width:thin;scrollbar-color:#526157 transparent}
+    .markdown-body table{width:100%;border-collapse:collapse;font-size:14px;line-height:1.6;text-align:left}
+    .markdown-body th,.markdown-body td{padding:10px 14px;min-width:100px;border-bottom:1px solid var(--line);vertical-align:top}
+    .markdown-body th{font-weight:600;background:var(--surface)}
+    .markdown-body tr:last-child td{border-bottom:0}
+    .markdown-body .hljs-comment,.markdown-body .hljs-quote{color:#9bae9e}
+    .markdown-body .hljs-keyword,.markdown-body .hljs-selector-tag,.markdown-body .hljs-meta,.markdown-body .hljs-doctag{color:#d9b4e6}
+    .markdown-body .hljs-string,.markdown-body .hljs-regexp,.markdown-body .hljs-addition,.markdown-body .hljs-template-tag{color:#b6dca1}
+    .markdown-body .hljs-number,.markdown-body .hljs-literal,.markdown-body .hljs-variable,.markdown-body .hljs-template-variable{color:#e8c394}
+    .markdown-body .hljs-title,.markdown-body .hljs-section,.markdown-body .hljs-built_in,.markdown-body .hljs-selector-class{color:#a9d3e3}
+    .markdown-body .hljs-attr,.markdown-body .hljs-attribute,.markdown-body .hljs-type,.markdown-body .hljs-symbol,.markdown-body .hljs-bullet{color:#ded09e}
+    .markdown-body .hljs-name,.markdown-body .hljs-deletion{color:#ecb0a9}
+    .markdown-body .hljs-emphasis{font-style:italic}
+    .markdown-body .hljs-strong{font-weight:700}
     form{flex-shrink:0;width:100%;max-width:788px;margin:0 auto;padding:12px 0 max(12px,env(safe-area-inset-bottom))}
     .compose-box{display:flex;align-items:flex-end;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
     .compose-box:focus-within{border-color:#799b85}
     textarea{display:block;min-width:0;flex:1;resize:none;min-height:82px;max-height:180px;border:0;padding:8px;background:transparent;color:var(--text);font:inherit;line-height:1.5;caret-color:var(--accent);outline:none}
     textarea::placeholder{color:var(--muted);opacity:1}
-    button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;flex-shrink:0;padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#18241c;font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer}
-    button:hover{background:#c3e8d0}
-    button:active{background:#9bc9ac}
-    button:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
-    button:disabled{background:#49584e;color:#d0d9d3;cursor:default}
-    button svg{width:16px;height:16px}
+    #send{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;flex-shrink:0;padding:10px 14px;border:0;border-radius:10px;background:var(--accent);color:#18241c;font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer}
+    #send:hover{background:#c3e8d0}
+    #send:active{background:#9bc9ac}
+    #send:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+    #send:disabled{background:#49584e;color:#d0d9d3;cursor:default}
+    #send svg{width:16px;height:16px}
     #delivery{min-height:20px;margin:8px 8px 0;color:var(--muted);font-size:12px;line-height:1.6;overflow-wrap:anywhere}
     @media(max-width:600px){
       main{padding:0 16px}
-      header{gap:12px;min-height:70px;flex-wrap:wrap;padding:14px 0}
+      main>header{gap:12px;min-height:70px;flex-wrap:wrap;padding:14px 0}
       .brand{font-size:16px}
-      h1{font-size:14px;flex-basis:60%}
+      #title{font-size:14px;flex-basis:60%}
       #status{max-width:none;text-align:left;flex-basis:100%}
       #notice{font-size:12px;margin:12px 0 4px}
       #messages{padding:16px 4px 12px}
       article{margin-bottom:24px}
       article[data-role=user]{max-width:94%;padding:12px 14px}
+      .markdown-body h1{font-size:24px}
+      .markdown-body h2{font-size:21px}
+      .markdown-body pre{padding:12px;font-size:12px}
+      .markdown-body th,.markdown-body td{padding:8px 10px}
       form{padding-top:8px}
       .compose-box{gap:4px;padding:8px;flex-wrap:wrap}
       textarea{flex-basis:100%;min-height:66px;padding:6px}
-      button{margin-left:auto;min-height:44px}
+      #send{margin-left:auto;min-height:44px}
       #delivery{margin-top:6px}
     }
   </style>
@@ -69,6 +124,7 @@
       <p id="delivery" role="status"></p>
     </form>
   </main>
+  <script src="/markdown.js"></script>
   <script src="/client.js"></script>
 </body>
 </html>

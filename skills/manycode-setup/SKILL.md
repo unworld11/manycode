@@ -6,10 +6,10 @@ description: Install and configure the Manycode CLI, shared Codex or Claude Code
 
 # Set up Manycode
 
-Run `manycode --version` and `manycode --help` to establish which commands are installed. For setup or an update request, install the released CLI if missing, older than 0.7.3, or its help lacks `share-thread`:
+Run `manycode --version` and `manycode --help` to establish which commands are installed. For setup or an update request, install the released CLI if missing, older than 0.7.4, or its help lacks `share-thread`:
 
 ```sh
-npm install -g https://github.com/unworld11/manycode/releases/download/cli-v0.7.3/manycode-0.7.3.tgz
+npm install -g https://github.com/unworld11/manycode/releases/download/cli-v0.7.4/manycode-0.7.4.tgz
 ```
 
 Check Node and npm before installing. Use Node 20+ for new setups. If missing, install them with the available OS package manager; if that requires an interactive system installer or administrator approval, explain that specific step and continue after it completes. If npm global installation lacks write access, use a user-owned prefix and invoke its binary by absolute path. Git is needed for development checkouts. For development, use the user's Manycode checkout with `npm install` and `npm link`. Verify the installed help before proceeding.
@@ -96,8 +96,8 @@ Guest prompt template:
 > required. If the Ads CLI is already installed, run `ads update` followed by
 > `ads skills sync`. The Ads CLI and a studio login are not required to join.
 >
-> If Manycode is missing or older than 0.7.3, install it with
-> `npm install -g https://github.com/unworld11/manycode/releases/download/cli-v0.7.3/manycode-0.7.3.tgz`.
+> If Manycode is missing or older than 0.7.4, install it with
+> `npm install -g https://github.com/unworld11/manycode/releases/download/cli-v0.7.4/manycode-0.7.4.tgz`.
 > Handle PATH or npm permissions with a user-owned install prefix if needed.
 > Verify the installed version, run `manycode setup --skills-only` and
 > `manycode doctor`, then read the installed `manycode-setup` skill directly so
