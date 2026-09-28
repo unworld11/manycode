@@ -90,6 +90,11 @@ const HELP = `manycode - multiplayer claude code
       opencode, kimi…), tunnel and menu bar preferences. runs by itself
       the first time you host; rerun it whenever you like.
 
+  manycode share-thread --thread ID [--tunnel] [--guest-name NAME]
+      share one existing Codex/ChatGPT conversation through invite links.
+      use --name EXACT_TITLE instead of --thread; --socket selects a backend.
+      queued prompts run in the owning app; keep the selected chat open.
+
   manycode doctor [--ssh <alias>]
       verify installed skills; optionally test SSH and remote Codex.
 
@@ -341,6 +346,10 @@ if (cmd === 'host') {
   });
   if (opts._.length) die('Unexpected setup arguments');
   require('../lib/setup-integrations').run(opts).catch(e => die(e.message));
+} else if (cmd === 'share-thread') {
+  const opts = parseFlags(argv, { '--thread=': 'thread', '--name=': 'name', '--socket=': 'socket', '--port=': 'port', '--guest-name=': 'guestName', '--tunnel': 'tunnel' });
+  if (opts._.length) die('Unexpected share-thread arguments');
+  require('../lib/share-thread').run(opts).catch(e => die(e.message));
 } else if (cmd === 'doctor') {
   const opts = parseFlags(argv, { '--ssh=': 'ssh' });
   if (opts._.length) die('Unexpected doctor arguments');

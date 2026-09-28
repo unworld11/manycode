@@ -39,8 +39,8 @@ manycode doctor
 
 Start a new Codex or Claude Code session and say:
 **Use manycode-setup to configure Manycode and start a shared coding session.**
-The curl installer also installs this skill. These changes must be published
-before they are available through the public installer.
+The curl installer also installs this skill. Releases include a standalone CLI
+package at https://github.com/unworld11/manycode/releases.
 
 To prepare a ChatGPT desktop SSH connection to a server you already use:
 
@@ -57,9 +57,31 @@ PATH. Authenticate Codex on that host before using it in the desktop app.
 Then select **manycode** in ChatGPT **Settings → Connections → SSH** and choose
 a project. `CODEX_HOME` and `CLAUDE_CONFIG_DIR` override skill install locations.
 
-SSH setup is connection preparation, not desktop multiplayer. Sharing a live
-ChatGPT/Codex desktop thread is not integrated yet. The Claude skill targets
-Claude Code; it does not attach to chats in the Claude desktop app.
+To share a selected existing Codex/ChatGPT desktop chat:
+
+```sh
+codex app-server daemon start
+manycode share-thread --name "Chosen chat title" --guest-name Bob --tunnel
+```
+
+Keep the selected chat open. Manycode reads only that thread through the app-server
+API and queues guest prompts; the owning app processes them when ready. It does
+not resume the thread in a competing backend. Both backends need message-queue
+support. `--thread ID` selects an exact thread; `--socket PATH` selects a control
+socket. Without `--tunnel`, the invite page listens only on localhost.
+
+The contributor invite permits reading and prompting. The view-only invite permits
+reading. These are bearer links, not account logins. Ctrl-C revokes future access
+and closes the tunnel; already queued prompts remain queued. Approvals stay with
+the host. User and assistant text and tool summaries are shared; internal reasoning
+and system/developer instructions are omitted. Conversation text can contain
+sensitive information: choose the thread you intend to share.
+
+SSH setup remains a separate option for remote project connections. The Claude
+skill targets Claude Code; it does not attach to Claude desktop chats.
+
+`npm run test:desktop -- --tunnel` exercises separate backends and browser contexts
+using synthetic data. Visible ChatGPT UI confirmation is a separate manual check.
 
 ## Shared tasks: work together across handoffs
 
