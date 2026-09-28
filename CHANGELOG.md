@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.3
+
+- Hosts provide a complete guest prompt with the actual invite, fresh-install and update instructions, and a no-install browser option.
+- Guest setup handles missing prerequisites and joins without requiring an Ads account.
+
 ## 0.7.2
 
 - Shared desktop conversations stream changed turns instead of repeatedly downloading the full history.

@@ -1,6 +1,6 @@
 {
   "name": "manycode",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Multiplayer coding agents - share your live session with a code, like AirDrop",
   "license": "MIT",
   "bin": {
