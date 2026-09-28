@@ -70,12 +70,21 @@ not resume the thread in a competing backend. Both backends need message-queue
 support. `--thread ID` selects an exact thread; `--socket PATH` selects a control
 socket. Without `--tunnel`, the invite page listens only on localhost.
 
+Guests receive live updates containing changed turns, with immediate feedback on submitted prompts. The desktop backend may still take up to ten seconds to pick up queued prompts before model processing starts.
+
 The contributor invite permits reading and prompting. The view-only invite permits
 reading. These are bearer links, not account logins. Ctrl-C revokes future access
 and closes the tunnel; already queued prompts remain queued. Approvals stay with
 the host. User and assistant text and tool summaries are shared; internal reasoning
 and system/developer instructions are omitted. Conversation text can contain
 sensitive information: choose the thread you intend to share.
+
+To join through your own Codex or Claude Code session, ask its agent to use the
+`manycode-setup` skill with the invite link. The guest bridge supports
+`manycode remote connect "INVITE_URL"`, `manycode remote read`, and
+`manycode remote prompt "Your message"`. It stores the invite privately on your
+machine; `manycode remote disconnect` removes it. This is tool-mediated access
+from your own chat, not native mirroring of the host's thread.
 
 SSH setup remains a separate option for remote project connections. The Claude
 skill targets Claude Code; it does not attach to Claude desktop chats.

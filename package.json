@@ -1,6 +1,6 @@
 {
   "name": "manycode",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Multiplayer coding agents - share your live session with a code, like AirDrop",
   "license": "MIT",
   "bin": {
@@ -8,14 +8,16 @@
     "ccshare": "bin/manycode.js"
   },
   "scripts": {
-    "test": "node test/smoke.js && node test/edges.js && node test/tasks.js && node test/releases.js && node test/setup.js && node test/share-thread.js",
+    "test": "node test/smoke.js && node test/edges.js && node test/tasks.js && node test/releases.js && node test/setup.js && node test/share-thread.js && node test/remote.js",
     "postinstall": "chmod +x node_modules/node-pty/prebuilds/*/spawn-helper 2>/dev/null || true",
     "test:browser": "node test/browser.js",
     "dist:mac": "bash app/build-dmg.sh",
     "dist:mac:dev": "bash app/build-dmg.sh --development",
     "verify:release": "node scripts/verify-release.js",
     "publish:release": "node scripts/publish-release.js",
-    "test:desktop": "node scripts/verify-desktop-sharing.js"
+    "test:desktop": "node scripts/verify-desktop-sharing.js",
+    "test:sharing-speed": "node scripts/benchmark-sharing.js",
+    "test:sharing-browser": "node test/share-thread-browser.js"
   },
   "engines": {
     "node": ">=18"

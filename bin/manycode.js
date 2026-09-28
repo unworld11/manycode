@@ -95,6 +95,13 @@ const HELP = `manycode - multiplayer claude code
       use --name EXACT_TITLE instead of --thread; --socket selects a backend.
       queued prompts run in the owning app; keep the selected chat open.
 
+  manycode remote connect INVITE_URL
+  manycode remote read [--json]
+  manycode remote prompt TEXT
+  manycode remote disconnect
+      use a shared conversation through your own coding agent's tools.
+      scoped guest access; does not mirror a native ChatGPT thread.
+
   manycode doctor [--ssh <alias>]
       verify installed skills; optionally test SSH and remote Codex.
 
@@ -333,6 +340,7 @@ if (cmd === 'host') {
   const pkg = require('../package.json');
   let commit = '';
   try {
+    if (!require('fs').existsSync(require('path').join(__dirname, '..', '.git'))) throw new Error('Packaged release');
     commit = ' (' + require('child_process')
       .execFileSync('git', ['-C', require('path').join(__dirname, '..'), 'rev-parse', '--short', 'HEAD'],
         { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() + ')';
@@ -350,6 +358,8 @@ if (cmd === 'host') {
   const opts = parseFlags(argv, { '--thread=': 'thread', '--name=': 'name', '--socket=': 'socket', '--port=': 'port', '--guest-name=': 'guestName', '--tunnel': 'tunnel' });
   if (opts._.length) die('Unexpected share-thread arguments');
   require('../lib/share-thread').run(opts).catch(e => die(e.message));
+} else if (cmd === 'remote') {
+  require('../lib/remote').run(argv).catch(e => die(e.message));
 } else if (cmd === 'doctor') {
   const opts = parseFlags(argv, { '--ssh=': 'ssh' });
   if (opts._.length) die('Unexpected doctor arguments');

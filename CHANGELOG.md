@@ -1,8 +1,21 @@
 # Changelog
 
-manycode installs and updates straight from git (`manycode update` is a `git pull`),
-so what you actually run is `master` HEAD - these tags just mark the points worth
-naming.
+## 0.7.2
+
+- Shared desktop conversations stream changed turns instead of repeatedly downloading the full history.
+- Guest prompts appear immediately with delivery feedback; updates preserve the reader's scroll position.
+- A cleaner desktop and mobile shared-chat layout keeps replies clear of the composer.
+- The remote guest bridge lets Codex and Claude Code agents read and prompt an invited conversation from their own session.
+- Setup upgrades older Manycode installations to the current CLI release.
+- Desktop queue pickup remains controlled by the owning Codex backend.
+
+## 0.7.1
+
+- Share a selected desktop Codex conversation using contributor or view-only invite links.
+
+## 0.7.0
+
+- Shared prompts and agent setup skills for Codex and Claude Code.
 
 ## 0.6.0
 
